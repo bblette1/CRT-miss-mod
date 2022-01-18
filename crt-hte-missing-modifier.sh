@@ -1,7 +1,6 @@
 #!/bin/bash
-#SBATCH --time=48:00:00
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=1
-#SBATCH --mem=8g
-
-srun R CMD BATCH --vanilla "--args seed$SLURM_ARRAY_TASK_ID" crt-hte-missing-modifier.R crt-hte-missing-modifier-$SLURM_ARRAY_TASK_ID.Rout
+#BSUB -J R_job[1-10]
+#BSUB -oo R-%I.o
+#BSUB -eo R-%I.e
+module load R/3.5.0
+Rscript crt-hte-missing-modifier.R

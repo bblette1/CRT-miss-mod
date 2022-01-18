@@ -182,7 +182,7 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
 
 
 # Send simulations to computing cluster
-nsims <- 1000
+nsims <- 10
 ICC_out <- 0.1
 ICC_mod <- 0.1
 num_clusters <- 20
@@ -190,7 +190,8 @@ combos <- data.frame(trials = seq(1, nsims),
                      ICC_outs = rep(ICC_out, nsims),
                      ICC_mods = rep(ICC_mod, nsims),
                      num_clusterss = rep(num_clusters, nsims))
-i <- as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
+#i <- as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
+i <- as.numeric(Sys.getenv("LSB_JOBINDEX"))
 combo_i <- combos[(i), ]
 
 set.seed(i*1000)
@@ -198,7 +199,11 @@ sim <- with(combo_i, mapply(simulator, trials, ICC_outs, ICC_mods,
                             num_clusterss))
 
 # Output
-outfile <- paste("./Results/results_mod_Iout_", ICC_out, "_Imod_",
-                 ICC_mod, "_nc_", num_clusters, "_",
-                 i, ".Rdata", sep = "")
+#outfile <- paste("./Results/results_mod_Iout_", ICC_out, "_Imod_",
+                 #ICC_mod, "_nc_", num_clusters, "_",
+                 #i, ".Rdata", sep = "")
+outfile <-
+  paste("/project/mharhaylab/blette/1_20_22/Results/results_mod_Iout_",
+        ICC_out, "_Imod_", ICC_mod, "_nc_", num_clusters, "_",
+        i, ".Rdata", sep = "")
 save(sim, file = outfile)
