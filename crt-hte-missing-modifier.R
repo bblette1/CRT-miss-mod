@@ -37,7 +37,10 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
   alpha1_var <- Y_resvar * ICC_out / (1 - ICC_out)
   alpha1 <- rnorm(num_clusters, 0, sqrt(alpha1_var))
   df$Y <- 1 + 1.5*df$A + df$Mfull - 0.75*df$A*df$Mfull +
-    0.7*df$X*df$Mfull*df$A +
+    #0.7*df$X +
+    #0.7*df$X*df$A +
+    0.7*df$X*df$Mfull +
+    #0.7*df$X*df$Mfull*df$A +
     rep(alpha1, size_clusters) + rnorm(n, 0, sqrt(Y_resvar))
   
   # Missingness
@@ -75,16 +78,16 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
   varests3 <- varests4 <- varests5 <- varests6 <-
     varests7 <- varests8 <-rep(NA, numimp)
   
-  impmod4 <- glmer(M ~ X + (1 | cluster_ID), family = "binomial",
+  impmod4 <- glmer(M ~ X + A + Y + (1 | cluster_ID), family = "binomial",
                    data = df[!is.na(df$M), ])
   #impmod3 <- geeglm(M ~ X + A*Y, family = binomial(),
   #data = df[!is.na(df$M), ],
   #id = cluster_ID, corstr = "exchangeable")
-  impmod5 <- glmer(M ~ X + Y + (1 | cluster_ID), family = "binomial",
+  impmod5 <- glmer(M ~ X + A*Y + (1 | cluster_ID), family = "binomial",
                    data = df[!is.na(df$M), ])
-  impmod6 <- glmer(M ~ X + A + Y + (1 | cluster_ID), family = "binomial",
+  impmod6 <- glmer(M ~ X*A + Y + (1 | cluster_ID), family = "binomial",
                    data = df[!is.na(df$M), ])
-  impmod7 <- glmer(M ~ X + A*Y + (1 | cluster_ID), family = "binomial",
+  impmod7 <- glmer(M ~ X*A + Y*A + (1 | cluster_ID), family = "binomial",
                    data = df[!is.na(df$M), ])
   impmod8 <- glmer(M ~ X*A*Y + (1 | cluster_ID), family = "binomial",
                    data = df[!is.na(df$M), ])
@@ -182,16 +185,16 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
 
 
 # Send simulations to computing cluster
-nsims <- 10
+nsims <- 1000
 ICC_out <- 0.1
 ICC_mod <- 0.1
-num_clusters <- 20
+num_clusters <- 100
 combos <- data.frame(trials = seq(1, nsims),
                      ICC_outs = rep(ICC_out, nsims),
                      ICC_mods = rep(ICC_mod, nsims),
                      num_clusterss = rep(num_clusters, nsims))
-#i <- as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
-i <- as.numeric(Sys.getenv("LSB_JOBINDEX"))
+i <- as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
+#i <- as.numeric(Sys.getenv("LSB_JOBINDEX"))
 combo_i <- combos[(i), ]
 
 set.seed(i*1000)
@@ -199,11 +202,11 @@ sim <- with(combo_i, mapply(simulator, trials, ICC_outs, ICC_mods,
                             num_clusterss))
 
 # Output
-#outfile <- paste("./Results/results_mod_Iout_", ICC_out, "_Imod_",
-                 #ICC_mod, "_nc_", num_clusters, "_",
-                 #i, ".Rdata", sep = "")
-outfile <-
-  paste("/project/mharhaylab/blette/1_20_22/Results/results_mod_Iout_",
-        ICC_out, "_Imod_", ICC_mod, "_nc_", num_clusters, "_",
-        i, ".Rdata", sep = "")
+outfile <- paste("./Results/results_mod_XM_Iout_", ICC_out, "_Imod_",
+                 ICC_mod, "_nc_", num_clusters, "_",
+                 i, ".Rdata", sep = "")
+#outfile <-
+  #paste("/project/mharhaylab/blette/1_20_22/Results/results_mod_Iout_",
+        #ICC_out, "_Imod_", ICC_mod, "_nc_", num_clusters, "_",
+        #i, ".Rdata", sep = "")
 save(sim, file = outfile)
