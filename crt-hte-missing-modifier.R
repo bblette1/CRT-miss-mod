@@ -1,5 +1,6 @@
 # Exploratory simulation of HTE in CRT w/ missing moderator
 # Load libraries
+library(dbarts)
 library(dplyr)
 library(geepack)
 library(ggplot2)
@@ -39,12 +40,12 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
   df$Y <- 1 + 1.5*df$A + df$Mfull - 0.75*df$A*df$Mfull +
     #0.7*df$X +
     #0.7*df$X*df$A +
-    0.7*df$X*df$Mfull +
-    #0.7*df$X*df$Mfull*df$A +
+    #0.7*df$X*df$Mfull +
+    0.7*df$X*df$Mfull*df$A +
     rep(alpha1, size_clusters) + rnorm(n, 0, sqrt(Y_resvar))
   
   # Missingness
-  Rlogit <- 0.5 + 0.5*df$X
+  Rlogit <- 0.5 + 0.5*df$X - 0.2*df$Y
   Rprob <- exp(Rlogit) / (1 + exp(Rlogit))
   df$R <- rbinom(n, 1, Rprob)
   
@@ -74,9 +75,10 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
   
   # Methods 3-8: Multiple Imputation methods
   numimp <- 15
-  ests3 <- ests4 <- ests5 <- ests6 <- ests7 <- ests8 <- rep(NA, numimp)
-  varests3 <- varests4 <- varests5 <- varests6 <-
-    varests7 <- varests8 <-rep(NA, numimp)
+  ests3 <- ests4 <- ests5 <- ests6 <- ests7 <- ests8 <-
+    ests9 <- rep(NA, numimp)
+  varests3 <- varests4 <- varests5 <- varests6 <- varests7 <-
+    varests8 <- varests9 <- rep(NA, numimp)
   
   impmod4 <- glmer(M ~ X + A + Y + (1 | cluster_ID), family = "binomial",
                    data = df[!is.na(df$M), ])
@@ -91,6 +93,21 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
                    data = df[!is.na(df$M), ])
   impmod8 <- glmer(M ~ X*A*Y + (1 | cluster_ID), family = "binomial",
                    data = df[!is.na(df$M), ])
+  
+  #impmodbart <- gbart(x.train = as.matrix(df[!is.na(df$M), c(3, 4, 6)]),
+                      #y.train = as.vector(df$M[!is.na(df$M)]),
+                      #type = "pbart")
+  #predtest2 <- predict(impmodbart, as.matrix(df[is.na(df$M),c(3, 4, 6)]))
+  
+  impmodbart <- rbart_vi(M ~ . - cluster_ID, n.trees = 500,
+                         df[!is.na(df$M), c(1, 3, 4, 6, 8)],
+                         group.by = cluster_ID, keepTrees = TRUE,
+                         n.chains = 4)
+  predtest <- predict(impmodbart,
+                      df[is.na(df$M), c(1, 3, 4, 6, 8)],
+                      group.by = df[is.na(df$M),
+                                    c(1, 3, 4, 6, 8)]$cluster_ID,
+                      type = "ppd")
   
   for (m in 1:numimp) {
     
@@ -154,6 +171,15 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
     ests8[m] <- coef(mod8)[4]
     varests8[m] <- (summary(mod8)$coefficients[4, 2])^2
     
+    # Method 9: BART imputation
+    dfimp9 <- df
+    dfimp9$M[is.na(dfimp9$M)] <-
+      rbinom(sum(is.na(df$M)), 1, colMeans(predtest))
+    mod9 <- geeglm(Y ~ A*M, family = "gaussian", data = dfimp9,
+                   id = cluster_ID, corstr = "exchangeable")
+    ests9[m] <- coef(mod9)[4]
+    varests9[m] <- (summary(mod9)$coefficients[4, 2])^2
+    
   }
   
   find_tval <- function(ests, varests) {
@@ -169,7 +195,7 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
   # Output
   return(c(coef(mod1)[4], coef(mod2)[4], mean(ests3), mean(ests4),
            mean(ests5), mean(ests6), mean(ests7), mean(ests8),
-           summary(mod1)$coefficients[4, 2],
+           mean(ests9), summary(mod1)$coefficients[4, 2],
            summary(mod2)$coefficients[4, 2],
            sqrt(var(ests3) + (numimp+1)/(numimp-1)*mean(varests3)),
            sqrt(var(ests4) + (numimp+1)/(numimp-1)*mean(varests4)),
@@ -177,9 +203,11 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
            sqrt(var(ests6) + (numimp+1)/(numimp-1)*mean(varests6)),
            sqrt(var(ests7) + (numimp+1)/(numimp-1)*mean(varests7)),
            sqrt(var(ests8) + (numimp+1)/(numimp-1)*mean(varests8)),
+           sqrt(var(ests9) + (numimp+1)/(numimp-1)*mean(varests9)),
            find_tval(ests3, varests3), find_tval(ests4, varests4),
            find_tval(ests5, varests5), find_tval(ests6, varests6),
-           find_tval(ests7, varests7), find_tval(ests8, varests8)))
+           find_tval(ests7, varests7), find_tval(ests8, varests8),
+           find_tval(ests9, varests9)))
   
 }
 
@@ -188,13 +216,13 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
 nsims <- 1000
 ICC_out <- 0.1
 ICC_mod <- 0.1
-num_clusters <- 100
+num_clusters <- 20
 combos <- data.frame(trials = seq(1, nsims),
                      ICC_outs = rep(ICC_out, nsims),
                      ICC_mods = rep(ICC_mod, nsims),
                      num_clusterss = rep(num_clusters, nsims))
-i <- as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
-#i <- as.numeric(Sys.getenv("LSB_JOBINDEX"))
+#i <- as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
+i <- as.numeric(Sys.getenv("LSB_JOBINDEX"))
 combo_i <- combos[(i), ]
 
 set.seed(i*1000)
@@ -202,11 +230,11 @@ sim <- with(combo_i, mapply(simulator, trials, ICC_outs, ICC_mods,
                             num_clusterss))
 
 # Output
-outfile <- paste("./Results/results_mod_XM_Iout_", ICC_out, "_Imod_",
-                 ICC_mod, "_nc_", num_clusters, "_",
-                 i, ".Rdata", sep = "")
-#outfile <-
-  #paste("/project/mharhaylab/blette/1_20_22/Results/results_mod_Iout_",
-        #ICC_out, "_Imod_", ICC_mod, "_nc_", num_clusters, "_",
-        #i, ".Rdata", sep = "")
+#outfile <- paste("./Results/results_mod_XM_Iout_", ICC_out, "_Imod_",
+                 #ICC_mod, "_nc_", num_clusters, "_",
+                 #i, ".Rdata", sep = "")
+outfile <-
+  paste("/project/mharhaylab/blette/2_15_22/Results/results_out",
+        "_XAM_Iout_", ICC_out, "_Imod_", ICC_mod, "_nc_", num_clusters,
+        "_", i, ".Rdata", sep = "")
 save(sim, file = outfile)
