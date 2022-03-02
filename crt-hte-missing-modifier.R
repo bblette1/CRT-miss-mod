@@ -4,8 +4,9 @@ library(dbarts)
 library(dplyr)
 library(geepack)
 library(ggplot2)
+library(jomo)
 library(lme4)
-#library(mice)
+library(mitml)
 
 # Simulator function
 simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
@@ -99,15 +100,15 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
                       #type = "pbart")
   #predtest2 <- predict(impmodbart, as.matrix(df[is.na(df$M),c(3, 4, 6)]))
   
-  impmodbart <- rbart_vi(M ~ . - cluster_ID, n.trees = 500,
-                         df[!is.na(df$M), c(1, 3, 4, 6, 8)],
-                         group.by = cluster_ID, keepTrees = TRUE,
-                         n.chains = 4)
-  predtest <- predict(impmodbart,
-                      df[is.na(df$M), c(1, 3, 4, 6, 8)],
-                      group.by = df[is.na(df$M),
-                                    c(1, 3, 4, 6, 8)]$cluster_ID,
-                      type = "ppd")
+  #impmodbart <- rbart_vi(M ~ . - cluster_ID, n.trees = 75,
+                         #df[!is.na(df$M), c(1, 3, 4, 6, 8)],
+                         #group.by = cluster_ID, keepTrees = TRUE,
+                         #n.chains = 2, power = 2)
+  #predtest <- predict(impmodbart,
+                      #df[is.na(df$M), c(1, 3, 4, 6, 8)],
+                      #group.by = df[is.na(df$M),
+                                    #c(1, 3, 4, 6, 8)]$cluster_ID,
+                      #type = "ppd")
   
   for (m in 1:numimp) {
     
@@ -172,15 +173,53 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
     varests8[m] <- (summary(mod8)$coefficients[4, 2])^2
     
     # Method 9: BART imputation
-    dfimp9 <- df
-    dfimp9$M[is.na(dfimp9$M)] <-
-      rbinom(sum(is.na(df$M)), 1, colMeans(predtest))
-    mod9 <- geeglm(Y ~ A*M, family = "gaussian", data = dfimp9,
-                   id = cluster_ID, corstr = "exchangeable")
-    ests9[m] <- coef(mod9)[4]
-    varests9[m] <- (summary(mod9)$coefficients[4, 2])^2
+    #dfimp9 <- df
+    #dfimp9$M[is.na(dfimp9$M)] <-
+      #rbinom(sum(is.na(df$M)), 1, colMeans(predtest))
+    #mod9 <- geeglm(Y ~ A*M, family = "gaussian", data = dfimp9,
+                   #id = cluster_ID, corstr = "exchangeable")
+    #ests9[m] <- coef(mod9)[4]
+    #varests9[m] <- (summary(mod9)$coefficients[4, 2])^2
     
   }
+  
+  # Gibbs sampler check
+  dfimp10 <- df
+  dfimp10$M[is.na(dfimp10$M)] <- mean(dfimp10$M, na.rm = T)
+  ests10 <- rep(NA, 1)
+  for (g in 1:1) {
+    
+    impmod10 <- glmer(M ~ X*A*Y + (1 | cluster_ID), family = "binomial",
+                     data = dfimp10)
+    mod10 <- geeglm(Y ~ A*M, family = "gaussian", data = dfimp10,
+                    id = cluster_ID, corstr = "exchangeable")
+    ests10[g] <- coef(mod10)[4]
+    
+    dfimp10 <- df
+    dfimp10$M[is.na(dfimp10$M)] <-
+      rbinom(sum(is.na(df$M)), 1, predict(impmod10, df[is.na(df$M), ],
+                                          type = "response"))
+    
+  }
+  
+  df$Mfactor <- as.factor(df$M)
+  df$intercept <- 1
+  #jomomod <- jomo(Y = as.data.frame(df$Mfactor),
+                  #X = as.data.frame(df[, c(10, 3, 4, 6)]),
+                  #X2 = as.data.frame(df[, 3]),
+                  #clus = as.data.frame(df[, 1]),
+                  #nburn = 1000, nbetween = 1000, nimp = numimp, output = 0)
+  #imp_mitml <- jomo2mitml.list(jomomod)
+  #fit_i <- with(imp_mitml, geeglm(Y ~ A*df.Mfactor, family = "gaussian",
+                                  #id = clus, corstr = "exchangeable"))
+  #fit_jomo <- testEstimates(fit_i, extra.pars = T)
+  
+  testmod <- jomoImpute(as.data.frame(df),
+                        formula = Mfactor ~ X*A*Y + (1 | cluster_ID))
+  imp_mitml <- mitmlComplete(testmod)
+  fit_i <- with(imp_mitml, geeglm(Y ~ A*Mfactor, family = "gaussian",
+                                  id = cluster_ID, corstr = "exchangeable"))
+  fit_jomo <- testEstimates(fit_i, extra.pars = T)
   
   find_tval <- function(ests, varests) {
     nu <- (numimp - 1)*(1 + numimp*mean(varests) /
@@ -195,7 +234,10 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
   # Output
   return(c(coef(mod1)[4], coef(mod2)[4], mean(ests3), mean(ests4),
            mean(ests5), mean(ests6), mean(ests7), mean(ests8),
-           mean(ests9), summary(mod1)$coefficients[4, 2],
+           #mean(ests9),
+           #mean(ests10[21:200]),
+           fit_jomo$estimates[4, 1],
+           summary(mod1)$coefficients[4, 2],
            summary(mod2)$coefficients[4, 2],
            sqrt(var(ests3) + (numimp+1)/(numimp-1)*mean(varests3)),
            sqrt(var(ests4) + (numimp+1)/(numimp-1)*mean(varests4)),
@@ -203,17 +245,21 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
            sqrt(var(ests6) + (numimp+1)/(numimp-1)*mean(varests6)),
            sqrt(var(ests7) + (numimp+1)/(numimp-1)*mean(varests7)),
            sqrt(var(ests8) + (numimp+1)/(numimp-1)*mean(varests8)),
-           sqrt(var(ests9) + (numimp+1)/(numimp-1)*mean(varests9)),
+           #sqrt(var(ests9) + (numimp+1)/(numimp-1)*mean(varests9)),
+           fit_jomo$estimates[4, 2],
            find_tval(ests3, varests3), find_tval(ests4, varests4),
            find_tval(ests5, varests5), find_tval(ests6, varests6),
            find_tval(ests7, varests7), find_tval(ests8, varests8),
-           find_tval(ests9, varests9)))
+           find_tval(ests8, varests8)
+           #find_tval(ests9, varests9),
+           #quantile(ests10[21:200], c(.025, .975))
+           ))
   
 }
 
 
 # Send simulations to computing cluster
-nsims <- 1000
+nsims <- 500
 ICC_out <- 0.1
 ICC_mod <- 0.1
 num_clusters <- 20
@@ -234,7 +280,7 @@ sim <- with(combo_i, mapply(simulator, trials, ICC_outs, ICC_mods,
                  #ICC_mod, "_nc_", num_clusters, "_",
                  #i, ".Rdata", sep = "")
 outfile <-
-  paste("/project/mharhaylab/blette/2_15_22/Results/results_out",
+  paste("/project/mharhaylab/blette/3_3_22/Results/results_out",
         "_XAM_Iout_", ICC_out, "_Imod_", ICC_mod, "_nc_", num_clusters,
         "_", i, ".Rdata", sep = "")
 save(sim, file = outfile)
