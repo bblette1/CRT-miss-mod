@@ -1,4 +1,6 @@
 # Exploratory simulation of HTE in CRT w/ missing moderator
+rm(list = ls())
+
 # Load libraries
 library(dbarts)
 library(dplyr)
@@ -46,32 +48,69 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
     rep(alpha1, size_clusters) + rnorm(n, 0, sqrt(Y_resvar))
   
   # Missingness
-  Rlogit <- 0.5 + 0.5*df$X - 0.2*df$Y
+  Rlogit <- 1.2 + 0.5*df$X - 0.2*df$Y
   Rprob <- exp(Rlogit) / (1 + exp(Rlogit))
   df$R <- rbinom(n, 1, Rprob)
   
   df$M <- NA
   df$M[df$R == 1] <- df$Mfull[df$R == 1]
   
+  # Add interactions to data for JAV analyses
+  df$AM <- df$A*df$M
+  df$XAM <- df$X*df$A*df$M
+  
   
   # Data analysis
   # Truth
-  truemod <- geeglm(Y ~ A*Mfull, family = "gaussian", data = df,
+  truemod <- geeglm(Y ~ A*Mfull + X:A:Mfull, family = "gaussian", data = df,
                     id = cluster_ID, corstr = "exchangeable")
   
   # Method 1: CRA-GEE
-  mod1 <- geeglm(Y ~ A*M, family = "gaussian",
+  mod1 <- geeglm(Y ~ A*M + X:A:M, family = "gaussian",
                  data = df[!is.na(df$M), ],
                  id = cluster_ID, corstr = "exchangeable")
   
-  # Method 2: Single Imputation
-  impmod2 <- glm(M ~ X*A*Y, data = df[!is.na(df$M), ],
-                 family = "binomial")
+  # Method 2: Single Imputation - Passive
+  impmod2_M <- glm(M ~ X*A*Y, data = df[!is.na(df$M), ],
+                   family = "binomial")
   dfimp2 <- df
   dfimp2$M[is.na(dfimp2$M)] <- rbinom(sum(is.na(df$M)), 1,
-                                      predict(impmod2, df[is.na(df$M), ],
+                                      predict(impmod2_M, df[is.na(df$M), ],
                                               type = "response"))
-  mod2 <- geeglm(Y ~ A*M, family = "gaussian", data = dfimp2,
+  mod2 <- geeglm(Y ~ A*M + X:A:M, family = "gaussian", data = dfimp2,
+                 id = cluster_ID, corstr = "exchangeable")
+  
+  # Method 3: Single Imputation - JAV
+  impmod3_AM <- glm(AM ~ X*A*Y, data = df[!is.na(df$M), ],
+                    family = "binomial")
+  impmod3_XAM <- glm(XAM ~ X*A*Y, data = df[!is.na(df$M), ],
+                     family = "gaussian")
+  
+  dfimp3 <- df
+  dfimp3$M[is.na(dfimp3$M)] <- rbinom(sum(is.na(df$M)), 1,
+                                      predict(impmod2_M, df[is.na(df$M), ],
+                                              type = "response"))
+  dfimp3$AM[is.na(dfimp3$AM)] <- rbinom(sum(is.na(df$AM)), 1,
+                                        predict(impmod3_AM, df[is.na(df$AM), ],
+                                                type = "response"))
+  #dfimp3$XAM[is.na(dfimp3$XAM)] <- predict(impmod3_XAM, df[is.na(df$XAM), ])
+  mod3 <- geeglm(Y ~ A + M + AM + X:A:M, family = "gaussian", data = dfimp3,
+                 id = cluster_ID, corstr = "exchangeable")
+  
+  # Method 4: Single Imputation - JAV enhanced
+  impmod4_AM <- glm(AM ~ X*Y, data = df[!is.na(df$M) & df$A != 0, ],
+                    family = "binomial")
+  
+  dfimp4 <- df
+  dfimp4$M[is.na(dfimp4$M)] <- rbinom(sum(is.na(df$M)), 1,
+                                      predict(impmod2_M, df[is.na(df$M), ],
+                                              type = "response"))
+  dfimp4$AM[is.na(dfimp4$AM) & dfimp4$A == 0] <- 0
+  dfimp4$AM[is.na(dfimp4$AM) & dfimp4$A != 0] <-
+    rbinom(sum(is.na(df$AM) & df$A != 0), 1,
+           predict(impmod4_AM, df[is.na(df$AM) & df$A != 0, ],
+                   type = "response"))
+  mod4 <- geeglm(Y ~ A + M + AM + X:A:M, family = "gaussian", data = dfimp4,
                  id = cluster_ID, corstr = "exchangeable")
   
   # Methods 3-8: Multiple Imputation methods
@@ -232,13 +271,13 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
   }
   
   # Output
-  return(c(coef(mod1)[4], coef(mod2)[4], mean(ests3), mean(ests4),
+  return(c(coef(mod1), coef(mod2), mean(ests3), mean(ests4),
            mean(ests5), mean(ests6), mean(ests7), mean(ests8),
            #mean(ests9),
            #mean(ests10[21:200]),
            fit_jomo$estimates[4, 1],
-           summary(mod1)$coefficients[4, 2],
-           summary(mod2)$coefficients[4, 2],
+           summary(mod1)$coefficients[, 2],
+           summary(mod2)$coefficients[, 2],
            sqrt(var(ests3) + (numimp+1)/(numimp-1)*mean(varests3)),
            sqrt(var(ests4) + (numimp+1)/(numimp-1)*mean(varests4)),
            sqrt(var(ests5) + (numimp+1)/(numimp-1)*mean(varests5)),
