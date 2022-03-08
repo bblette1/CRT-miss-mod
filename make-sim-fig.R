@@ -137,3 +137,15 @@ makeSimFig <- function(type, nsims, ICC_out, ICC_mod) {
   return(fig_dat)
   
 }
+
+
+
+figdat1 <- makeSimFig("out_XAM", 500, 0.1, 0.1)
+ggplot(data = figdat1, aes(x = Num_Clusters, y = Output, color = Method,
+                           shape = Method)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(~Metric, nrow = 2, scales = "free") +
+  geom_hline(aes(yintercept = Hline), color = "black") +
+  #ggtitle("Modifier missing, ICC_out = ICC_mod = 0.1") +
+  theme_light()
