@@ -703,8 +703,8 @@ combos <- data.frame(trials = seq(1, nsims),
                      ICC_mods = rep(ICC_mod, nsims),
                      num_clusterss = rep(num_clusters, nsims))
 #i <- as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
-i <- as.numeric(Sys.getenv("LSB_JOBINDEX"))
-combo_i <- combos[(i), ]
+i <- as.numeric(Sys.getenv("LSB_JOBINDEX")) + 500
+combo_i <- combos[(i-500), ]
 
 set.seed(i*1000)
 sim <- with(combo_i, mapply(simulator, trials, ICC_outs, ICC_mods,
