@@ -16,8 +16,8 @@ bsigres <- rep(NA, 100)
 
 for (g in 1:100) {
   
-  Beta <- array(NA, dim = c(nsim - burn, p))
-  Sigmab <- rep(NA, nsim - burn)
+  Beta <- array(NA, dim = c(numiter - burn, p))
+  Sigmab <- rep(NA, numiter - burn)
   
   id <- rep(1:n, nis)
   X1 <- rnorm(N, 0, 1)
@@ -88,9 +88,13 @@ for (g in 1:100) {
   }
   
   betares[g, ] <- colMeans(Beta)
-  bsigres[g] <- mean(Sigmab)
+  bsigres[g] <- mean(Sigmab, na.rm = T)
   
 }
 
 colMeans(betares) - c(0.5, 1.2, -0.6)
-mean(bsigres)
+mean(sqrt(bsigres))
+
+
+
+# Check sampler with uneven cluster sizes
