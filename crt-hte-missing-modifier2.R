@@ -49,7 +49,7 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
     #0.7*df$X*df$A +
     #0.7*df$X*df$Mfull +
     #0.7*df$X*df$Mfull*df$A +
-    0.8*df$X*df$A - 0.4*df$X*df$Mfull +
+    0.8*df$X*df$A - 0.4*df$X*df$Mfull + 0.7*df$X*df$Mfull*df$A +
     rep(alpha1, size_clusters) + rnorm(n, 0, sqrt(Y_resvar))
   
   # Missingness
@@ -76,7 +76,7 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
                  id = cluster_ID, corstr = "exchangeable")
   
   # Method 2: Single Imputation - Passive
-  impmod2_M <- glm(M ~ X*A + X*Y + A*Y, data = df[!is.na(df$M), ],
+  impmod2_M <- glm(M ~ X*A*Y, data = df[!is.na(df$M), ],
                    family = "binomial")
   dfimp2 <- df
   dfimp2$M[is.na(dfimp2$M)] <- rbinom(sum(is.na(df$M)), 1,
@@ -86,9 +86,9 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
                  id = cluster_ID, corstr = "exchangeable")
   
   # Method 3: Single Imputation - JAV
-  impmod3_AM <- glm(AM ~ X*A + X*Y + A*Y, data = df[!is.na(df$M), ],
+  impmod3_AM <- glm(AM ~ X*A*Y, data = df[!is.na(df$M), ],
                     family = "binomial")
-  impmod3_XAM <- glm(XAM ~ X*A + X*Y + A*Y, data = df[!is.na(df$M), ],
+  impmod3_XAM <- glm(XAM ~ X*A*Y, data = df[!is.na(df$M), ],
                      family = "gaussian")
   
   dfimp3 <- df
@@ -136,7 +136,7 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
                    data = df[!is.na(df$M), ])
   impmod7 <- glmer(M ~ X*A + Y*A + (1 | cluster_ID), family = "binomial",
                    data = df[!is.na(df$M), ])
-  impmod8 <- glmer(M ~ X*A + X*Y + A*Y + (1 | cluster_ID), family = "binomial",
+  impmod8 <- glmer(M ~ X*A*Y + (1 | cluster_ID), family = "binomial",
                    data = df[!is.na(df$M), ])
   
   #impmodbart <- gbart(x.train = as.matrix(df[!is.na(df$M), c(3, 4, 6)]),
@@ -270,27 +270,30 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
   #id = cluster_ID, corstr = "exchangeable"))
   #fit_jomo <- testEstimates(fit_i, extra.pars = T)
   
-  # Logit Gibbs sampler
+  # Logit Gibbs samplers
   # Initialize and set priors
   numburn <- 1000
   thin <- 100
   numiter <- numburn + thin*numimp
-  # Prior mean for beta
-  beta0 <- summary(impmod8)$coefficients[, 1]
-  # Prior precision for beta
-  T0 <- diag(.01, 7)
   # Gamma hyperpriors
   c <- d <- 0.01
+  
+  # First do conditional on X + A + Y
+  # Set priors
+  # Prior mean for beta
+  beta0 <- summary(impmod4)$coefficients[, 1]
+  # Prior precision for beta
+  T0 <- diag(.01, 4)
+  
   # Initial values
-  beta <- summary(impmod8)$coefficients[, 1]
+  beta <- summary(impmod4)$coefficients[, 1]
   b <- rep(0, num_clusters) # Random effects
   taub <- 2 # Random effect precision
   
   # Summarize data in helpful vectors and matrices
   #id <- with(df, ave(rep(1, nrow(df)), cluster_ID, FUN = seq_along))
   id <- df$cluster_ID
-  X <- cbind(1, df$X, df$A, df$Y, df$X*df$A, df$X*df$Y,
-             df$A*df$Y)
+  X <- cbind(1, df$X, df$A, df$Y)
   ests12 <- array(NA, dim = c(numimp, 4))
   varests12 <- array(NA, dim = c(numimp, 4))
   
@@ -332,27 +335,24 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
     
   }
   
-  # Probit Gibbs sampler
+  # Next do conditional on X + A*Y
+  # Set priors
   # Prior mean for beta
-  beta0 <- summary(impmod8)$coefficients[, 1]
+  beta0 <- summary(impmod5)$coefficients[, 1]
   # Prior precision for beta
-  T0 <- diag(.01, 7)
-  # Priors for Random Effects
-  nu0 <- 3				      # DF for IWish prior on Sigmab  
-  c0 <- 0.01			# Scale matrix for Wishart Prior on Sigmae
+  T0 <- diag(.01, 5)
   
   # Initial values
-  beta <- summary(impmod8)$coefficients[, 1]
-  z <- rep(0, dim(df)[1])
+  beta <- summary(impmod5)$coefficients[, 1]
   b <- rep(0, num_clusters) # Random effects
   taub <- 2 # Random effect precision
   
-  # Save output
+  # Summarize data in helpful vectors and matrices
+  #id <- with(df, ave(rep(1, nrow(df)), cluster_ID, FUN = seq_along))
+  id <- df$cluster_ID
+  X <- cbind(1, df$X, df$A, df$Y, df$A*df$Y)
   ests13 <- array(NA, dim = c(numimp, 4))
   varests13 <- array(NA, dim = c(numimp, 4))
-  
-  # Posterior Var(beta) outside of loop
-  vbeta <- solve(T0 + crossprod(X, X))
   
   # Algorithm
   for (h in 1:numiter) {
@@ -360,7 +360,7 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
     # Impute missing data
     dfimp13 <- df
     est <- X %*% beta + rep(b, size_clusters)
-    estprob <- pnorm(est)
+    estprob <- exp(est[is.na(df$M)]) / (1 + exp(est[is.na(df$M)]))
     dfimp13$M[is.na(dfimp13$M)] <- rbinom(sum(is.na(df$M)), 1, estprob)
     
     # Fit outcome model after burn-in and after each thinning
@@ -371,37 +371,270 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
       varests13[(h - numburn) / thin, ] <- (summary(mod13)$coefficients[, 2])^2
     }
     
-    # Draw latent variable z
-    muz <- X %*% beta + rep(b, size_clusters)
-    z[dfimp13$M == 0] <- qnorm(runif(dim(df)[1], 0, pnorm(0, muz)),
-                               muz)[dfimp13$M == 0]
-    z[dfimp13$M == 1] <- qnorm(runif(dim(df)[1], pnorm(0, muz), 1),
-                               muz)[dfimp13$M == 1]
-    z[z == -Inf] <- -100
+    # Update z
+    mu <- X %*% beta + rep(b, size_clusters)
+    omega <- rpg(dim(df)[1], 1, mu)
+    z <- (dfimp13$M - 1/2) / omega
     
     # Update beta
-    mbeta <- vbeta %*% (T0 %*% beta0 + crossprod(X, z - rep(b, size_clusters)))
-    beta <- c(rmvnorm(1, mbeta, vbeta))
+    v <- solve(crossprod(sqrt(omega)*X) + T0)
+    m <- v %*% (T0 %*% beta0 + t(sqrt(omega)*X) %*%
+                  (sqrt(omega)*(z - rep(b, size_clusters))))
+    beta <- c(rmvnorm(1, m, v))
     
     # Update b
-    #taub12<-taub1/(1-rhob^2)  		                    # Prior precision of b1|b2
-    #mb12<-rhob*sqrt(taub2/taub1)*b2 	                # Prior mean of b1|b2
-    #vb1<-1/(nis+taub12)                              # Posterior var of b1|b2,y
-    #mb1<-vb1*(taub12*mb12+tapply(z-X%*%beta,id,sum)) # Posterior mean of b1|b2,y
-    #b1<-rnorm(n,mb1,sqrt(vb1))
-    
-    # Update b
-    vb <- 1 / (c(taub) + size_clusters)
-    #vb <- 1 / (c(taub) + tapply(z, id, sum))
-    #mb <- vb*(c(taub) + tapply((z - X %*% beta), id, sum))
-    mb <- vb*(tapply((z - X %*% beta), id, sum))
+    vb <- 1 / (taub + tapply(omega, id, sum))
+    mb <- vb*(tapply(omega*(z - X %*% beta), id, sum))
     b <- rnorm(num_clusters, mb, sqrt(vb))
     
     # Update taub
-    Sigmab <- riwish(nu0 + num_clusters, c0 + crossprod(b))
-    taub <- 1 / Sigmab
+    taub <- rgamma(1, c + num_clusters/2, d + crossprod(b)/2)
     
   }
+  
+  # Now do conditional on X*A + Y
+  # Set priors
+  # Prior mean for beta
+  beta0 <- summary(impmod6)$coefficients[, 1]
+  # Prior precision for beta
+  T0 <- diag(.01, 5)
+  
+  # Initial values
+  beta <- summary(impmod6)$coefficients[, 1]
+  b <- rep(0, num_clusters) # Random effects
+  taub <- 2 # Random effect precision
+  
+  # Summarize data in helpful vectors and matrices
+  #id <- with(df, ave(rep(1, nrow(df)), cluster_ID, FUN = seq_along))
+  id <- df$cluster_ID
+  X <- cbind(1, df$X, df$A, df$Y, df$X*df$A)
+  ests14 <- array(NA, dim = c(numimp, 4))
+  varests14 <- array(NA, dim = c(numimp, 4))
+  
+  # Algorithm
+  for (h in 1:numiter) {
+    
+    # Impute missing data
+    dfimp14 <- df
+    est <- X %*% beta + rep(b, size_clusters)
+    estprob <- exp(est[is.na(df$M)]) / (1 + exp(est[is.na(df$M)]))
+    dfimp14$M[is.na(dfimp14$M)] <- rbinom(sum(is.na(df$M)), 1, estprob)
+    
+    # Fit outcome model after burn-in and after each thinning
+    if (h > numburn & h %% thin == 0) {
+      mod14 <- geeglm(Y ~ A*M, family = "gaussian", data = dfimp14,
+                      id = cluster_ID, corstr = "exchangeable")
+      ests14[(h - numburn) / thin, ] <- coef(mod14)
+      varests14[(h - numburn) / thin, ] <- (summary(mod14)$coefficients[, 2])^2
+    }
+    
+    # Update z
+    mu <- X %*% beta + rep(b, size_clusters)
+    omega <- rpg(dim(df)[1], 1, mu)
+    z <- (dfimp14$M - 1/2) / omega
+    
+    # Update beta
+    v <- solve(crossprod(sqrt(omega)*X) + T0)
+    m <- v %*% (T0 %*% beta0 + t(sqrt(omega)*X) %*%
+                  (sqrt(omega)*(z - rep(b, size_clusters))))
+    beta <- c(rmvnorm(1, m, v))
+    
+    # Update b
+    vb <- 1 / (taub + tapply(omega, id, sum))
+    mb <- vb*(tapply(omega*(z - X %*% beta), id, sum))
+    b <- rnorm(num_clusters, mb, sqrt(vb))
+    
+    # Update taub
+    taub <- rgamma(1, c + num_clusters/2, d + crossprod(b)/2)
+    
+  }
+  
+  # Now do conditional on X*A + Y*A
+  # Set priors
+  # Prior mean for beta
+  beta0 <- summary(impmod7)$coefficients[, 1]
+  # Prior precision for beta
+  T0 <- diag(.01, 6)
+  
+  # Initial values
+  beta <- summary(impmod7)$coefficients[, 1]
+  b <- rep(0, num_clusters) # Random effects
+  taub <- 2 # Random effect precision
+  
+  # Summarize data in helpful vectors and matrices
+  #id <- with(df, ave(rep(1, nrow(df)), cluster_ID, FUN = seq_along))
+  id <- df$cluster_ID
+  X <- cbind(1, df$X, df$A, df$Y, df$X*df$A, df$A*df$Y)
+  ests15 <- array(NA, dim = c(numimp, 4))
+  varests15 <- array(NA, dim = c(numimp, 4))
+  
+  # Algorithm
+  for (h in 1:numiter) {
+    
+    # Impute missing data
+    dfimp15 <- df
+    est <- X %*% beta + rep(b, size_clusters)
+    estprob <- exp(est[is.na(df$M)]) / (1 + exp(est[is.na(df$M)]))
+    dfimp15$M[is.na(dfimp15$M)] <- rbinom(sum(is.na(df$M)), 1, estprob)
+    
+    # Fit outcome model after burn-in and after each thinning
+    if (h > numburn & h %% thin == 0) {
+      mod15 <- geeglm(Y ~ A*M, family = "gaussian", data = dfimp15,
+                      id = cluster_ID, corstr = "exchangeable")
+      ests15[(h - numburn) / thin, ] <- coef(mod15)
+      varests15[(h - numburn) / thin, ] <- (summary(mod15)$coefficients[, 2])^2
+    }
+    
+    # Update z
+    mu <- X %*% beta + rep(b, size_clusters)
+    omega <- rpg(dim(df)[1], 1, mu)
+    z <- (dfimp15$M - 1/2) / omega
+    
+    # Update beta
+    v <- solve(crossprod(sqrt(omega)*X) + T0)
+    m <- v %*% (T0 %*% beta0 + t(sqrt(omega)*X) %*%
+                  (sqrt(omega)*(z - rep(b, size_clusters))))
+    beta <- c(rmvnorm(1, m, v))
+    
+    # Update b
+    vb <- 1 / (taub + tapply(omega, id, sum))
+    mb <- vb*(tapply(omega*(z - X %*% beta), id, sum))
+    b <- rnorm(num_clusters, mb, sqrt(vb))
+    
+    # Update taub
+    taub <- rgamma(1, c + num_clusters/2, d + crossprod(b)/2)
+    
+  }
+  
+  # Now do conditional on X*A*Y
+  # Set priors
+  # Prior mean for beta
+  beta0 <- summary(impmod8)$coefficients[, 1]
+  # Prior precision for beta
+  T0 <- diag(.01, 8)
+  
+  # Initial values
+  beta <- summary(impmod8)$coefficients[, 1]
+  b <- rep(0, num_clusters) # Random effects
+  taub <- 2 # Random effect precision
+  
+  # Summarize data in helpful vectors and matrices
+  #id <- with(df, ave(rep(1, nrow(df)), cluster_ID, FUN = seq_along))
+  id <- df$cluster_ID
+  X <- cbind(1, df$X, df$A, df$Y, df$X*df$A, df$X*df$Y,
+             df$A*df$Y, df$X*df$A*df$Y)
+  ests16 <- array(NA, dim = c(numimp, 4))
+  varests16 <- array(NA, dim = c(numimp, 4))
+  
+  # Algorithm
+  for (h in 1:numiter) {
+    
+    # Impute missing data
+    dfimp16 <- df
+    est <- X %*% beta + rep(b, size_clusters)
+    estprob <- exp(est[is.na(df$M)]) / (1 + exp(est[is.na(df$M)]))
+    dfimp16$M[is.na(dfimp16$M)] <- rbinom(sum(is.na(df$M)), 1, estprob)
+    
+    # Fit outcome model after burn-in and after each thinning
+    if (h > numburn & h %% thin == 0) {
+      mod16 <- geeglm(Y ~ A*M, family = "gaussian", data = dfimp16,
+                      id = cluster_ID, corstr = "exchangeable")
+      ests16[(h - numburn) / thin, ] <- coef(mod16)
+      varests16[(h - numburn) / thin, ] <- (summary(mod16)$coefficients[, 2])^2
+    }
+    
+    # Update z
+    mu <- X %*% beta + rep(b, size_clusters)
+    omega <- rpg(dim(df)[1], 1, mu)
+    z <- (dfimp16$M - 1/2) / omega
+    
+    # Update beta
+    v <- solve(crossprod(sqrt(omega)*X) + T0)
+    m <- v %*% (T0 %*% beta0 + t(sqrt(omega)*X) %*%
+                  (sqrt(omega)*(z - rep(b, size_clusters))))
+    beta <- c(rmvnorm(1, m, v))
+    
+    # Update b
+    vb <- 1 / (taub + tapply(omega, id, sum))
+    mb <- vb*(tapply(omega*(z - X %*% beta), id, sum))
+    b <- rnorm(num_clusters, mb, sqrt(vb))
+    
+    # Update taub
+    taub <- rgamma(1, c + num_clusters/2, d + crossprod(b)/2)
+    
+  }
+  
+  
+  # Probit Gibbs sampler
+  # Prior mean for beta
+  #beta0 <- summary(impmod8)$coefficients[, 1]
+  # Prior precision for beta
+  #T0 <- diag(.01, 8)
+  # Priors for Random Effects
+  #nu0 <- 3				      # DF for IWish prior on Sigmab  
+  #c0 <- 0.01			# Scale matrix for Wishart Prior on Sigmae
+  
+  # Initial values
+  #beta <- summary(impmod8)$coefficients[, 1]
+  #z <- rep(0, dim(df)[1])
+  #b <- rep(0, num_clusters) # Random effects
+  #taub <- 2 # Random effect precision
+  
+  # Save output
+  #ests13 <- array(NA, dim = c(numimp, 4))
+  #varests13 <- array(NA, dim = c(numimp, 4))
+  
+  # Posterior Var(beta) outside of loop
+  #vbeta <- solve(T0 + crossprod(X, X))
+  
+  # Algorithm
+  #for (h in 1:numiter) {
+  
+  # Impute missing data
+  #dfimp13 <- df
+  #est <- X %*% beta + rep(b, size_clusters)
+  #estprob <- pnorm(est)
+  #dfimp13$M[is.na(dfimp13$M)] <- rbinom(sum(is.na(df$M)), 1, estprob)
+  
+  # Fit outcome model after burn-in and after each thinning
+  #if (h > numburn & h %% thin == 0) {
+  #mod13 <- geeglm(Y ~ A*M, family = "gaussian", data = dfimp13,
+  #id = cluster_ID, corstr = "exchangeable")
+  #ests13[(h - numburn) / thin, ] <- coef(mod13)
+  #varests13[(h - numburn) / thin, ] <- (summary(mod13)$coefficients[, 2])^2
+  #}
+  
+  # Draw latent variable z
+  #muz <- X %*% beta + rep(b, size_clusters)
+  #z[dfimp13$M == 0] <- qnorm(runif(dim(df)[1], 0, pnorm(0, muz)),
+  #muz)[dfimp13$M == 0]
+  #z[dfimp13$M == 1] <- qnorm(runif(dim(df)[1], pnorm(0, muz), 1),
+  #muz)[dfimp13$M == 1]
+  #z[z == -Inf] <- -100
+  
+  # Update beta
+  #mbeta <- vbeta %*% (T0 %*% beta0 + crossprod(X, z - rep(b, size_clusters)))
+  #beta <- c(rmvnorm(1, mbeta, vbeta))
+  
+  # Update b
+  #taub12<-taub1/(1-rhob^2)  		                    # Prior precision of b1|b2
+  #mb12<-rhob*sqrt(taub2/taub1)*b2 	                # Prior mean of b1|b2
+  #vb1<-1/(nis+taub12)                              # Posterior var of b1|b2,y
+  #mb1<-vb1*(taub12*mb12+tapply(z-X%*%beta,id,sum)) # Posterior mean of b1|b2,y
+  #b1<-rnorm(n,mb1,sqrt(vb1))
+  
+  # Update b
+  #vb <- 1 / (c(taub) + size_clusters)
+  #vb <- 1 / (c(taub) + tapply(z, id, sum))
+  #mb <- vb*(c(taub) + tapply((z - X %*% beta), id, sum))
+  #mb <- vb*(tapply((z - X %*% beta), id, sum))
+  #b <- rnorm(num_clusters, mb, sqrt(vb))
+  
+  # Update taub
+  #Sigmab <- riwish(nu0 + num_clusters, c0 + crossprod(b))
+  #taub <- 1 / Sigmab
+  
+  #}
   
   # Helper function to find t-value (>1.96 when num_clusters is small)
   find_tval <- function(ests, varests, numimp) {
@@ -421,7 +654,8 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
            #colMeans(ests10[51:100, ]),
            #fit_jomo$estimates[1:4, 1],
            #fit_jomo$estimates[6, 1] - fit_jomo$estimates[5, 1],
-           colMeans(ests12), colMeans(ests13),
+           colMeans(ests12), colMeans(ests13), colMeans(ests14),
+           colMeans(ests15), colMeans(ests16),
            summary(mod1)$coefficients[, 2],
            summary(mod2)$coefficients[, 2],
            sqrt(colVars(ests3) + (numimp+1)/(numimp-1)*colMeans(varests3)),
@@ -435,19 +669,25 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
            #fit_jomo$estimates[-5, 2],
            sqrt(colVars(ests12) + (numimp+1)/(numimp-1)*colMeans(varests12)),
            sqrt(colVars(ests13) + (numimp+1)/(numimp-1)*colMeans(varests13)),
+           sqrt(colVars(ests14) + (numimp+1)/(numimp-1)*colMeans(varests14)),
+           sqrt(colVars(ests15) + (numimp+1)/(numimp-1)*colMeans(varests15)),
+           sqrt(colVars(ests16) + (numimp+1)/(numimp-1)*colMeans(varests16)),
            find_tval(ests3, varests3, numimp),
            find_tval(ests4, varests4, numimp),
            find_tval(ests5, varests5, numimp),
            find_tval(ests6, varests6, numimp),
            find_tval(ests7, varests7, numimp),
            find_tval(ests8, varests8, numimp),
-           find_tval(ests8, varests8, numimp),
+           #find_tval(ests8, varests8, numimp),
            #find_tval(ests10[51:100, ], varests10[51:100, ], 50),
            #c(colQuantiles(ests12, probs = c(0.025, 0.975))),
            #find_tval(ests9, varests9),
            #quantile(ests10[21:200], c(.025, .975)),
            find_tval(ests12, varests12, numimp),
-           find_tval(ests13, varests13, numimp)
+           find_tval(ests13, varests13, numimp),
+           find_tval(ests14, varests13, numimp),
+           find_tval(ests15, varests13, numimp),
+           find_tval(ests16, varests13, numimp)
   ))
   
 }
@@ -475,7 +715,7 @@ sim <- with(combo_i, mapply(simulator, trials, ICC_outs, ICC_mods,
 #ICC_mod, "_nc_", num_clusters, "_",
 #i, ".Rdata", sep = "")
 outfile <-
-  paste("/project/mharhaylab/blette/3_10_22/Results/results_out2",
+  paste("/project/mharhaylab/blette/3_17_22/Results/results_out2",
         "_Iout_", ICC_out, "_Imod_", ICC_mod, "_nc_", num_clusters,
         "_", i, ".Rdata", sep = "")
 save(sim, file = outfile)
