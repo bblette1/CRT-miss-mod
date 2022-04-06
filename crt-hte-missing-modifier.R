@@ -786,7 +786,7 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
 nsims <- 1000
 ICC_out <- 0.1
 ICC_mod <- 0.1
-num_clusters <- 50
+num_clusters <- 20
 combos <- data.frame(trials = seq(1, nsims),
                      ICC_outs = rep(ICC_out, nsims),
                      ICC_mods = rep(ICC_mod, nsims),
@@ -804,7 +804,7 @@ sim <- with(combo_i, mapply(simulator, trials, ICC_outs, ICC_mods,
                  #ICC_mod, "_nc_", num_clusters, "_",
                  #i, ".Rdata", sep = "")
 outfile <-
-  paste("/project/mharhaylab/blette/3_17_22/Results/results_out",
+  paste("/project/mharhaylab/blette/4_7_22/Results/results_out",
         "_Iout_", ICC_out, "_Imod_", ICC_mod, "_nc_", num_clusters,
         "_", i, ".Rdata", sep = "")
 save(sim, file = outfile)
