@@ -1,6 +1,6 @@
 # Test random effects BART code on its own
 rm(list = ls())
-library(BART)
+#library(BART)
 library(dbarts)
 library(geepack)
 library(MixRF)
@@ -46,7 +46,7 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
   df$Y <- 1 + 0.5*df$A + df$Mfull - 0.5*df$A*df$Mfull +
     0.8*df$X*df$A - 0.4*df$X*df$Mfull + exp(0.6*df$A*df$X*df$Mfull)
     + 0.7*exp(df$X) + sin(df$X*df$Mfull) + 0.3*df$X^2 - (0.5*df$X^3)*df$Mfull +
-    #rep(alpha1, size_clusters) +
+    rep(alpha1, size_clusters) +
     rnorm(n, 0, sqrt(Y_resvar))
   
   #testmod <- rbart_vi(Mfull ~ . - cluster_ID, n.trees = 75,
@@ -57,15 +57,16 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
   train <- df[trainids, ]
   testdat <- df[-trainids, ]
   
-  #testmod <- rbart_vi(Y ~ . - cluster_ID, train[, c(1, 3:6)],
+  #testmod <- rbart_vi(Y ~ ., train[, c(1, 3:6)],
                       #group.by = cluster_ID, keepTrees = TRUE)
-  #preds <- predict(testmod, testdat, group.by = testdat$cluster_ID)
+  #preds <- predict(testmod, testdat, group.by = testdat$cluster_ID,
+                   #type = "ev")
   testmod <- bart(Y ~ ., train[, c(3:6)], verbose = FALSE, keeptrees = T)
   preds <- predict(testmod, testdat)
   
   testmod2 <- geeglm(Y ~ A*X*Mfull, family = "gaussian", data = train,
-                     #id = cluster_ID, corstr = "exchangeable")
-                     id = cluster_ID, corstr = "independence")
+                     id = cluster_ID, corstr = "exchangeable")
+                     #id = cluster_ID, corstr = "independence")
   
   preds2 <- predict(testmod2, testdat)
   
@@ -77,15 +78,15 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
                    #u.train = train$cluster_ID)
   
   testmod3 <- geeglm(Y ~ A + X + Mfull, family = "gaussian", data = train,
-                     #id = cluster_ID, corstr = "exchangeable")
-                     id = cluster_ID, corstr = "independence")
+                     id = cluster_ID, corstr = "exchangeable")
+                     #id = cluster_ID, corstr = "independence")
   
   preds3 <- predict(testmod3, testdat)
   
-  print(head(testdat$Y))
-  print(head(colMeans(preds)))
-  print(head(preds2))
-  print(head(preds3))
+  #print(head(testdat$Y))
+  #print(head(colMeans(preds)))
+  #print(head(preds2))
+  #print(head(preds3))
   
   out1 <- mean((testdat$Y - colMeans(preds))^2)
   out2 <- mean((testdat$Y - preds2)^2)
