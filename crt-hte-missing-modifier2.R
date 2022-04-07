@@ -63,14 +63,15 @@ simulator <- function(trial, ICC_out, ICC_mod, ICC_miss, num_clusters) {
   df$M[df$R == 1] <- df$Mfull[df$R == 1]
   
   # Add interactions to data for JAV analyses
-  df$AM <- df$A*df$M
-  df$XAM <- df$X*df$A*df$M
+  #df$AM <- df$A*df$M
+  #df$XAM <- df$X*df$A*df$M
   
   
   ###########################################################################
   # Data analysis
   # Truth
-  truemod <- geeglm(Y ~ A*Mfull + X:A:Mfull, family = "gaussian", data = df,
+  truemod <- geeglm(Y ~ A*Mfull*X1 + X2:A:Mfull + X3:A:Mfull,
+                    family = "gaussian", data = df,
                     id = cluster_ID, corstr = "exchangeable")
   
   ###################
@@ -82,7 +83,7 @@ simulator <- function(trial, ICC_out, ICC_mod, ICC_miss, num_clusters) {
   ################################
   # Methods 2-5: Single Imputation
   # Method 2: Single imputation under X + A + Y model
-  impmod2 <- glm(M ~ X + A + Y, data = df[!is.na(df$M), ],
+  impmod2 <- glm(M ~ X1 + X2 + X3 + A + Y, data = df[!is.na(df$M), ],
                  family = "binomial")
   dfimp2 <- df
   dfimp2$M[is.na(dfimp2$M)] <- rbinom(sum(is.na(df$M)), 1,
@@ -92,7 +93,7 @@ simulator <- function(trial, ICC_out, ICC_mod, ICC_miss, num_clusters) {
                  id = cluster_ID, corstr = "exchangeable")
   
   # Method 3: Single imputation under X + A*Y model
-  impmod3 <- glm(M ~ X + A*Y, data = df[!is.na(df$M), ],
+  impmod3 <- glm(M ~ X1 + X2 + X3 + A*Y, data = df[!is.na(df$M), ],
                  family = "binomial")
   dfimp3 <- df
   dfimp3$M[is.na(dfimp3$M)] <- rbinom(sum(is.na(df$M)), 1,
@@ -102,7 +103,7 @@ simulator <- function(trial, ICC_out, ICC_mod, ICC_miss, num_clusters) {
                  id = cluster_ID, corstr = "exchangeable")
   
   # Method 4: Single imputation under X*A + Y model
-  impmod4 <- glm(M ~ X*A + Y, data = df[!is.na(df$M), ],
+  impmod4 <- glm(M ~ X1*A + X2*A + X3*A + Y, data = df[!is.na(df$M), ],
                  family = "binomial")
   dfimp4 <- df
   dfimp4$M[is.na(dfimp4$M)] <- rbinom(sum(is.na(df$M)), 1,
@@ -112,7 +113,7 @@ simulator <- function(trial, ICC_out, ICC_mod, ICC_miss, num_clusters) {
                  id = cluster_ID, corstr = "exchangeable")
   
   # Method 5: Single imputation under X*A + Y*A model
-  impmod5 <- glm(M ~ X*A + Y*A, data = df[!is.na(df$M), ],
+  impmod5 <- glm(M ~ X1*A + X2*A + X3*A + Y*A, data = df[!is.na(df$M), ],
                  family = "binomial")
   dfimp5 <- df
   dfimp5$M[is.na(dfimp5$M)] <- rbinom(sum(is.na(df$M)), 1,
@@ -122,7 +123,7 @@ simulator <- function(trial, ICC_out, ICC_mod, ICC_miss, num_clusters) {
                  id = cluster_ID, corstr = "exchangeable")
   
   # Method 6: Single imputation under X*A*Y model
-  impmod6 <- glm(M ~ X*A*Y, data = df[!is.na(df$M), ],
+  impmod6 <- glm(M ~ X1*A*Y + X2*A*Y + X3*A*Y, data = df[!is.na(df$M), ],
                  family = "binomial")
   dfimp6 <- df
   dfimp6$M[is.na(dfimp6$M)] <- rbinom(sum(is.na(df$M)), 1,
@@ -179,16 +180,16 @@ simulator <- function(trial, ICC_out, ICC_mod, ICC_miss, num_clusters) {
   
   # Define imputation models for the MMI methods
   # MI methods will use the same imputation models as for SI defined above
-  impmod12 <- glmer(M ~ X + A + Y + (1 | cluster_ID), family = "binomial",
-                    data = df[!is.na(df$M), ])
-  impmod13 <- glmer(M ~ X + A*Y + (1 | cluster_ID), family = "binomial",
-                    data = df[!is.na(df$M), ])
-  impmod14 <- glmer(M ~ X*A + Y + (1 | cluster_ID), family = "binomial",
-                    data = df[!is.na(df$M), ])
-  impmod15 <- glmer(M ~ X*A + Y*A + (1 | cluster_ID), family = "binomial",
-                    data = df[!is.na(df$M), ])
-  impmod16 <- glmer(M ~ X*A*Y + (1 | cluster_ID), family = "binomial",
-                    data = df[!is.na(df$M), ])
+  impmod12 <- glmer(M ~ X1 + X2 + X3 + A + Y + (1 | cluster_ID),
+                    family = "binomial", data = df[!is.na(df$M), ])
+  impmod13 <- glmer(M ~ X1 + X2 + X3 + A*Y + (1 | cluster_ID),
+                    family = "binomial", data = df[!is.na(df$M), ])
+  impmod14 <- glmer(M ~ X1*A + X2*A + X3*A + Y + (1 | cluster_ID),
+                    family = "binomial", data = df[!is.na(df$M), ])
+  impmod15 <- glmer(M ~ X1*A + X2*A + X3*A + Y*A + (1 | cluster_ID),
+                    family = "binomial", data = df[!is.na(df$M), ])
+  impmod16 <- glmer(M ~ X1*A*Y + X2*A*Y + X3*A*Y + (1 | cluster_ID),
+                    family = "binomial", data = df[!is.na(df$M), ])
   
   #impmodbart <- gbart(x.train = as.matrix(df[!is.na(df$M), c(3, 4, 6)]),
   #y.train = as.vector(df$M[!is.na(df$M)]),
@@ -385,7 +386,7 @@ simulator <- function(trial, ICC_out, ICC_mod, ICC_miss, num_clusters) {
   # Prior mean for beta
   beta0 <- summary(impmod12)$coefficients[, 1]
   # Prior precision for beta
-  T0 <- diag(.01, 4)
+  T0 <- diag(.01, 6)
   
   # Initial values
   beta <- summary(impmod12)$coefficients[, 1]
@@ -395,7 +396,7 @@ simulator <- function(trial, ICC_out, ICC_mod, ICC_miss, num_clusters) {
   # Summarize data in helpful vectors and matrices
   #id <- with(df, ave(rep(1, nrow(df)), cluster_ID, FUN = seq_along))
   id <- df$cluster_ID
-  X <- cbind(1, df$X, df$A, df$Y)
+  X <- cbind(1, df$X1, df$X2, df$X3, df$A, df$Y)
   
   # Algorithm
   for (h in 1:numiter) {
@@ -440,7 +441,7 @@ simulator <- function(trial, ICC_out, ICC_mod, ICC_miss, num_clusters) {
   # Prior mean for beta
   beta0 <- summary(impmod13)$coefficients[, 1]
   # Prior precision for beta
-  T0 <- diag(.01, 5)
+  T0 <- diag(.01, 7)
   
   # Initial values
   beta <- summary(impmod13)$coefficients[, 1]
@@ -450,7 +451,7 @@ simulator <- function(trial, ICC_out, ICC_mod, ICC_miss, num_clusters) {
   # Summarize data in helpful vectors and matrices
   #id <- with(df, ave(rep(1, nrow(df)), cluster_ID, FUN = seq_along))
   id <- df$cluster_ID
-  X <- cbind(1, df$X, df$A, df$Y, df$A*df$Y)
+  X <- cbind(1, df$X1, df$X2, df$X3, df$A, df$Y, df$A*df$Y)
   
   # Algorithm
   for (h in 1:numiter) {
@@ -495,7 +496,7 @@ simulator <- function(trial, ICC_out, ICC_mod, ICC_miss, num_clusters) {
   # Prior mean for beta
   beta0 <- summary(impmod14)$coefficients[, 1]
   # Prior precision for beta
-  T0 <- diag(.01, 5)
+  T0 <- diag(.01, 9)
   
   # Initial values
   beta <- summary(impmod14)$coefficients[, 1]
@@ -505,7 +506,8 @@ simulator <- function(trial, ICC_out, ICC_mod, ICC_miss, num_clusters) {
   # Summarize data in helpful vectors and matrices
   #id <- with(df, ave(rep(1, nrow(df)), cluster_ID, FUN = seq_along))
   id <- df$cluster_ID
-  X <- cbind(1, df$X, df$A, df$Y, df$X*df$A)
+  X <- cbind(1, df$X1, df$A, df$X2, df$X3, df$Y,
+             df$X1*df$A, df$X2*df$A, df$X3*df$A)
   
   # Algorithm
   for (h in 1:numiter) {
@@ -550,7 +552,7 @@ simulator <- function(trial, ICC_out, ICC_mod, ICC_miss, num_clusters) {
   # Prior mean for beta
   beta0 <- summary(impmod15)$coefficients[, 1]
   # Prior precision for beta
-  T0 <- diag(.01, 6)
+  T0 <- diag(.01, 10)
   
   # Initial values
   beta <- summary(impmod15)$coefficients[, 1]
@@ -560,7 +562,8 @@ simulator <- function(trial, ICC_out, ICC_mod, ICC_miss, num_clusters) {
   # Summarize data in helpful vectors and matrices
   #id <- with(df, ave(rep(1, nrow(df)), cluster_ID, FUN = seq_along))
   id <- df$cluster_ID
-  X <- cbind(1, df$X, df$A, df$Y, df$X*df$A, df$A*df$Y)
+  X <- cbind(1, df$X1, df$A, df$X2, df$X3, df$Y,
+             df$X1*df$A, df$X2*df$A, df$X3*df$A, df$A*df$Y)
   
   # Algorithm
   for (h in 1:numiter) {
@@ -605,7 +608,7 @@ simulator <- function(trial, ICC_out, ICC_mod, ICC_miss, num_clusters) {
   # Prior mean for beta
   beta0 <- summary(impmod16)$coefficients[, 1]
   # Prior precision for beta
-  T0 <- diag(.01, 8)
+  T0 <- diag(.01, 16)
   
   # Initial values
   beta <- summary(impmod16)$coefficients[, 1]
@@ -615,8 +618,9 @@ simulator <- function(trial, ICC_out, ICC_mod, ICC_miss, num_clusters) {
   # Summarize data in helpful vectors and matrices
   #id <- with(df, ave(rep(1, nrow(df)), cluster_ID, FUN = seq_along))
   id <- df$cluster_ID
-  X <- cbind(1, df$X, df$A, df$Y, df$X*df$A, df$X*df$Y,
-             df$A*df$Y, df$X*df$A*df$Y)
+  X <- cbind(1, df$X1, df$A, df$Y, df$X2, df$X3, df$X1*df$A, df$X1*df$Y,
+             df$A*df$Y, df$X2*df$A, df$X2*df$Y, df$X3*df$A, df$X3*df$Y,
+             df$X1*df$A*df$Y, df$X2*df$A*df$Y, df$X3*df$A*df$Y)
   
   # Algorithm
   for (h in 1:numiter) {
@@ -788,17 +792,19 @@ simulator <- function(trial, ICC_out, ICC_mod, ICC_miss, num_clusters) {
 nsims <- 1000
 ICC_out <- 0.1
 ICC_mod <- 0.1
-num_clusters <- 100
+ICC_miss <- 0.1
+num_clusters <- 20
 combos <- data.frame(trials = seq(1, nsims),
                      ICC_outs = rep(ICC_out, nsims),
                      ICC_mods = rep(ICC_mod, nsims),
+                     ICC_misses = rep(ICC_miss, nsims),
                      num_clusterss = rep(num_clusters, nsims))
 #i <- as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
 i <- as.numeric(Sys.getenv("LSB_JOBINDEX"))
 combo_i <- combos[(i), ]
 
 set.seed(i*1000)
-sim <- with(combo_i, mapply(simulator, trials, ICC_outs, ICC_mods,
+sim <- with(combo_i, mapply(simulator, trials, ICC_outs, ICC_mods, ICC_misses,
                             num_clusterss))
 
 # Output
