@@ -376,7 +376,11 @@ ggplot(data = figdat1[figdat1$Metric == "Bias", ],
   facet_wrap(~Method, nrow = 1, scales = "fixed") +
   geom_hline(aes(yintercept = Hline), color = "black") +
   #ggtitle("Modifier missing, ICC_out = ICC_mod = 0.1") +
-  theme_light()
+  xlab("Number of clusters") +
+  scale_x_continuous(breaks = c(20, 50, 100)) +
+  ylab("Average bias") +
+  theme_light() +
+  theme(panel.spacing = unit(0.75, "lines"))
 
 ggplot(data = figdat1[figdat1$Metric == "Coverage", ],
        aes(x = Num_Clusters, y = Output, color = Model,
@@ -386,7 +390,11 @@ ggplot(data = figdat1[figdat1$Metric == "Coverage", ],
   facet_wrap(~Method, nrow = 1, scales = "fixed") +
   geom_hline(aes(yintercept = Hline), color = "black") +
   #ggtitle("Modifier missing, ICC_out = ICC_mod = 0.1") +
-  theme_light()
+  xlab("Number of clusters") +
+  scale_x_continuous(breaks = c(20, 50, 100)) +
+  ylab("Average coverage") +
+  theme_light() +
+  theme(panel.spacing = unit(0.75, "lines"))
 
 ggplot(data = figdat1[figdat1$Metric == "RMSE", ],
        aes(x = Num_Clusters, y = Output, color = Model,
@@ -396,8 +404,56 @@ ggplot(data = figdat1[figdat1$Metric == "RMSE", ],
   facet_wrap(~Method, nrow = 1, scales = "fixed") +
   geom_hline(aes(yintercept = Hline), color = "black") +
   #ggtitle("Modifier missing, ICC_out = ICC_mod = 0.1") +
-  theme_light()
+  xlab("Number of clusters") +
+  scale_x_continuous(breaks = c(20, 50, 100)) +
+  ylab("Average RMSE") +
+  theme_light() +
+  theme(panel.spacing = unit(0.75, "lines"))
 
+
+
+figdat2 <- makeSimFig("out2", 1000, 0.1, 0.1)
+ggplot(data = figdat2[figdat2$Metric == "Bias", ],
+       aes(x = Num_Clusters, y = Output, color = Model,
+           shape = Model)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(~Method, nrow = 1, scales = "fixed") +
+  geom_hline(aes(yintercept = Hline), color = "black") +
+  #ggtitle("Modifier missing, ICC_out = ICC_mod = 0.1") +
+  xlab("Number of clusters") +
+  scale_x_continuous(breaks = c(20, 50, 100)) +
+  ylab("Average bias") +
+  theme_light() +
+  theme(panel.spacing = unit(0.75, "lines"))
+
+ggplot(data = figdat2[figdat2$Metric == "Coverage", ],
+       aes(x = Num_Clusters, y = Output, color = Model,
+           shape = Model)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(~Method, nrow = 1, scales = "fixed") +
+  geom_hline(aes(yintercept = Hline), color = "black") +
+  #ggtitle("Modifier missing, ICC_out = ICC_mod = 0.1") +
+  xlab("Number of clusters") +
+  scale_x_continuous(breaks = c(20, 50, 100)) +
+  ylab("Average coverage") +
+  theme_light() +
+  theme(panel.spacing = unit(0.75, "lines"))
+
+ggplot(data = figdat2[figdat2$Metric == "RMSE", ],
+       aes(x = Num_Clusters, y = Output, color = Model,
+           shape = Model)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(~Method, nrow = 1, scales = "fixed") +
+  geom_hline(aes(yintercept = Hline), color = "black") +
+  #ggtitle("Modifier missing, ICC_out = ICC_mod = 0.1") +
+  xlab("Number of clusters") +
+  scale_x_continuous(breaks = c(20, 50, 100)) +
+  ylab("Average RMSE") +
+  theme_light() +
+  theme(panel.spacing = unit(0.75, "lines"))
 
 
 
