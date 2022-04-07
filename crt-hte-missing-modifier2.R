@@ -15,7 +15,7 @@ library(mitml)
 library(mvtnorm)
 
 # Simulator function
-simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
+simulator <- function(trial, ICC_out, ICC_mod, ICC_miss, num_clusters) {
   
   # Data simulation
   size_clusters <- rpois(num_clusters, 50)
@@ -31,7 +31,9 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
   
   # Covariate
   n <- dim(df)[1]
-  df$X <- rnorm(n, 0, 1)
+  df$X1 <- rnorm(n, 0, 1)
+  df$X2 <- rnorm(n, 0, 1)
+  df$X3 <- rnorm(n, 0, 1)
   
   # Modifier
   alpha0_var <- pi^2 * ICC_mod / 3 / (1 - ICC_mod)
@@ -45,15 +47,15 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
   alpha1_var <- Y_resvar * ICC_out / (1 - ICC_out)
   alpha1 <- rnorm(num_clusters, 0, sqrt(alpha1_var))
   df$Y <- 1 + 1.5*df$A + df$Mfull - 0.75*df$A*df$Mfull +
-    #0.7*df$X +
-    #0.7*df$X*df$A +
-    #0.7*df$X*df$Mfull +
-    #0.7*df$X*df$Mfull*df$A +
-    0.8*df$X*df$A - 0.4*df$X*df$Mfull + 0.7*df$X*df$Mfull*df$A +
+    0.8*df$X1*df$A - 0.4*df$X1*df$Mfull + 0.7*df$X1*df$Mfull*df$A +
+    0.9*df$X2*df$Mfull*df$A - 1.1*df$X3*df$Mfull*df$A +
     rep(alpha1, size_clusters) + rnorm(n, 0, sqrt(Y_resvar))
   
   # Missingness
-  Rlogit <- 1.2 + 0.5*df$X #- 0.2*df$Y
+  alpha2_var <- pi^2 * ICC_miss / 3 / (1 - ICC_miss)
+  alpha2 <- rnorm(num_clusters, 0, sqrt(alpha2_var))
+  Rlogit <- 1.5 + 0.6*df$X1 + 1.2*df$X2 - 0.8*df$X3 - 0.2*df$Y +
+            rep(alpha2, size_clusters)
   Rprob <- exp(Rlogit) / (1 + exp(Rlogit))
   df$R <- rbinom(n, 1, Rprob)
   
@@ -804,7 +806,7 @@ sim <- with(combo_i, mapply(simulator, trials, ICC_outs, ICC_mods,
 #ICC_mod, "_nc_", num_clusters, "_",
 #i, ".Rdata", sep = "")
 outfile <-
-  paste("/project/mharhaylab/blette/4_7_22/Results/results_notout",
+  paste("/project/mharhaylab/blette/4_7_22/Results/results_out2",
         "_Iout_", ICC_out, "_Imod_", ICC_mod, "_nc_", num_clusters,
         "_", i, ".Rdata", sep = "")
 save(sim, file = outfile)
