@@ -53,7 +53,7 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
     rep(alpha1, size_clusters) + rnorm(n, 0, sqrt(Y_resvar))
   
   # Missingness
-  Rlogit <- 1.2 + 0.5*df$X #- 0.2*df$Y
+  Rlogit <- 1.2 + 0.5*df$X - 0.2*df$Y
   Rprob <- exp(Rlogit) / (1 + exp(Rlogit))
   df$R <- rbinom(n, 1, Rprob)
   
@@ -129,40 +129,6 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
   mod6 <- geeglm(Y ~ A*M, family = "gaussian", data = dfimp6,
                  id = cluster_ID, corstr = "exchangeable")
   
-  
-  # Method 3: Single Imputation - JAV
-  #impmod3_AM <- glm(AM ~ X*A*Y, data = df[!is.na(df$M), ],
-                    #family = "binomial")
-  #impmod3_XAM <- glm(XAM ~ X*A*Y, data = df[!is.na(df$M), ],
-                     #family = "gaussian")
-  
-  #dfimp3 <- df
-  #dfimp3$M[is.na(dfimp3$M)] <- rbinom(sum(is.na(df$M)), 1,
-                                      #predict(impmod2_M, df[is.na(df$M), ],
-                                              #type = "response"))
-  #dfimp3$AM[is.na(dfimp3$AM)] <- rbinom(sum(is.na(df$AM)), 1,
-                                      #predict(impmod3_AM, df[is.na(df$AM), ],
-                                                #type = "response"))
-  #dfimp3$XAM[is.na(dfimp3$XAM)] <- predict(impmod3_XAM, df[is.na(df$XAM), ])
-  #mod3 <- geeglm(Y ~ A + M + AM, family = "gaussian", data = dfimp3,
-                 #id = cluster_ID, corstr = "exchangeable")
-  
-  # Method 4: Single Imputation - JAV enhanced
-  #impmod4_AM <- glm(AM ~ X*Y, data = df[!is.na(df$M) & df$A != 0, ],
-                    #family = "binomial")
-  
-  #dfimp4 <- df
-  #dfimp4$M[is.na(dfimp4$M)] <- rbinom(sum(is.na(df$M)), 1,
-                                      #predict(impmod2_M, df[is.na(df$M), ],
-                                              #type = "response"))
-  #dfimp4$AM[is.na(dfimp4$AM) & dfimp4$A == 0] <- 0
-  #dfimp4$AM[is.na(dfimp4$AM) & dfimp4$A != 0] <-
-    #rbinom(sum(is.na(df$AM) & df$A != 0), 1,
-           #predict(impmod4_AM, df[is.na(df$AM) & df$A != 0, ],
-                   #type = "response"))
-  #mod4 <- geeglm(Y ~ A + M + AM, family = "gaussian", data = dfimp4,
-                 #id = cluster_ID, corstr = "exchangeable")
-  
   ###########################################
   # Methods 7-11: Multiple Imputation methods
   # Methods 12-16: Multi-level Multiple Imputation methods
@@ -187,25 +153,6 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
                     data = df[!is.na(df$M), ])
   impmod16 <- glmer(M ~ X*A*Y + (1 | cluster_ID), family = "binomial",
                     data = df[!is.na(df$M), ])
-  
-  #impmodbart <- gbart(x.train = as.matrix(df[!is.na(df$M), c(3, 4, 6)]),
-                      #y.train = as.vector(df$M[!is.na(df$M)]),
-                      #type = "pbart")
-  #predtest2 <- predict(impmodbart, as.matrix(df[is.na(df$M),c(3, 4, 6)]))
-  
-  #impmodbart <- rbart_vi(M ~ . - cluster_ID, n.trees = 75,
-                         #df[!is.na(df$M), c(1, 3, 4, 6, 8)],
-                         #group.by = cluster_ID, keepTrees = TRUE,
-                         #n.chains = 2, power = 2)
-  #predtest <- predict(impmodbart,
-                      #df[is.na(df$M), c(1, 3, 4, 6, 8)],
-                      #group.by = df[is.na(df$M),
-                                    #c(1, 3, 4, 6, 8)]$cluster_ID,
-                      #type = "ppd")
-  #impmodbart <- bart(M ~ . - cluster_ID, df[!is.na(df$M), c(1, 3, 4, 6, 8)],
-                     #keeptrees = TRUE)
-  #predtest <- predict(impmodbart, df[is.na(df$M), c(1, 3, 4, 6, 8)],
-                      #type = "ppd")
   
   # Run MI and MMI methods
   for (m in 1:numimp) {
@@ -314,60 +261,7 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
     ests16[m, ] <- coef(mod16)
     varests16[m, ] <- (summary(mod16)$coefficients[, 2])^2
     
-    # Method 9: BART imputation
-    #dfimp9 <- df
-    #dfimp9$M[is.na(dfimp9$M)] <-
-      #rbinom(sum(is.na(df$M)), 1, colMeans(predtest))
-    #mod9 <- geeglm(Y ~ A*M, family = "gaussian", data = dfimp9,
-                   #id = cluster_ID, corstr = "exchangeable")
-    #ests9[m, ] <- coef(mod9)
-    #varests9[m, ] <- (summary(mod9)$coefficients[, 2])^2
-    
   }
-  
-  # Data augmentation
-  #dfimp10 <- df
-  #dfimp10$M[is.na(dfimp10$M)] <-
-    #rbinom(sum(is.na(dfimp10$M)), 1, mean(dfimp10$M, na.rm = T))
-  #ests10 <- array(NA, dim = c(100, 5))
-  #varests10 <- array(NA, dim = c(100, 5))
-  #for (g in 1:100) {
-    
-    #impmod10 <- glmer(M ~ X*A*Y + (1 | cluster_ID), family = "binomial",
-                     #data = dfimp10)
-    #mod10 <- geeglm(Y ~ A*M, family = "gaussian", data = dfimp10,
-                    #id = cluster_ID, corstr = "exchangeable")
-    #ests10[g, ] <- coef(mod10)
-    #varests10[g, ] <- (summary(mod10)$coefficients[, 2])^2
-    
-    #dfimp10 <- df
-    #dfimp10$M[is.na(dfimp10$M)] <-
-      #rbinom(sum(is.na(df$M)), 1, predict(impmod10, df[is.na(df$M), ],
-                                          #type = "response"))
-    
-  #}
-  
-  # Use jomo package
-  #df$Mfactor <- as.factor(df$M)
-  #df$intercept <- 1
-  #jomomod <- jomo(Y = as.data.frame(df$Mfactor),
-                  #X = as.data.frame(df[, c(10, 3, 4, 6)]),
-                  #X2 = as.data.frame(df[, 3]),
-                  #clus = as.data.frame(df[, 1]),
-                  #nburn = 1000, nbetween = 1000, nimp = numimp, output = 0)
-  #imp_mitml <- jomo2mitml.list(jomomod)
-  #fit_i <- with(imp_mitml, geeglm(Y ~ A*df.Mfactor, family = "gaussian",
-                                  #id = clus, corstr = "exchangeable"))
-  #fit_jomo <- testEstimates(fit_i, extra.pars = T)
-  
-  #testmod <- jomoImpute(as.data.frame(df),
-                        #formula = Mfactor ~ X*A*Y + (1 | cluster_ID))
-  #imp_mitml <- mitmlComplete(testmod)
-  #fit_i <- with(imp_mitml, geeglm(Y ~ A*Mfactor + X:A:Mfactor,
-                                  #family = "gaussian",
-                                  #id = cluster_ID, corstr = "exchangeable"))
-  #fit_jomo <- testEstimates(fit_i, extra.pars = T)
-  
   
   #################################################
   # Bayesian MMI methods using logit Gibbs samplers
@@ -654,78 +548,6 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
     
   }
   
-  
-  # Probit Gibbs sampler
-  # Prior mean for beta
-  #beta0 <- summary(impmod8)$coefficients[, 1]
-  # Prior precision for beta
-  #T0 <- diag(.01, 8)
-  # Priors for Random Effects
-  #nu0 <- 3				      # DF for IWish prior on Sigmab  
-  #c0 <- 0.01			# Scale matrix for Wishart Prior on Sigmae
-  
-  # Initial values
-  #beta <- summary(impmod8)$coefficients[, 1]
-  #z <- rep(0, dim(df)[1])
-  #b <- rep(0, num_clusters) # Random effects
-  #taub <- 2 # Random effect precision
-  
-  # Save output
-  #ests13 <- array(NA, dim = c(numimp, 4))
-  #varests13 <- array(NA, dim = c(numimp, 4))
-  
-  # Posterior Var(beta) outside of loop
-  #vbeta <- solve(T0 + crossprod(X, X))
-  
-  # Algorithm
-  #for (h in 1:numiter) {
-    
-    # Impute missing data
-    #dfimp13 <- df
-    #est <- X %*% beta + rep(b, size_clusters)
-    #estprob <- pnorm(est)
-    #dfimp13$M[is.na(dfimp13$M)] <- rbinom(sum(is.na(df$M)), 1, estprob)
-    
-    # Fit outcome model after burn-in and after each thinning
-    #if (h > numburn & h %% thin == 0) {
-      #mod13 <- geeglm(Y ~ A*M, family = "gaussian", data = dfimp13,
-                      #id = cluster_ID, corstr = "exchangeable")
-      #ests13[(h - numburn) / thin, ] <- coef(mod13)
-      #varests13[(h - numburn) / thin, ] <- (summary(mod13)$coefficients[, 2])^2
-    #}
-    
-    # Draw latent variable z
-    #muz <- X %*% beta + rep(b, size_clusters)
-    #z[dfimp13$M == 0] <- qnorm(runif(dim(df)[1], 0, pnorm(0, muz)),
-                               #muz)[dfimp13$M == 0]
-    #z[dfimp13$M == 1] <- qnorm(runif(dim(df)[1], pnorm(0, muz), 1),
-                               #muz)[dfimp13$M == 1]
-    #z[z == -Inf] <- -100
-    
-    # Update beta
-    #mbeta <- vbeta %*% (T0 %*% beta0 + crossprod(X, z - rep(b, size_clusters)))
-    #beta <- c(rmvnorm(1, mbeta, vbeta))
-    
-    # Update b
-    #taub12<-taub1/(1-rhob^2)  		                    # Prior precision of b1|b2
-    #mb12<-rhob*sqrt(taub2/taub1)*b2 	                # Prior mean of b1|b2
-    #vb1<-1/(nis+taub12)                              # Posterior var of b1|b2,y
-    #mb1<-vb1*(taub12*mb12+tapply(z-X%*%beta,id,sum)) # Posterior mean of b1|b2,y
-    #b1<-rnorm(n,mb1,sqrt(vb1))
-    
-    # Update b
-    #vb <- 1 / (c(taub) + size_clusters)
-    #vb <- 1 / (c(taub) + tapply(z, id, sum))
-    #mb <- vb*(c(taub) + tapply((z - X %*% beta), id, sum))
-    #mb <- vb*(tapply((z - X %*% beta), id, sum))
-    #b <- rnorm(num_clusters, mb, sqrt(vb))
-    
-    # Update taub
-    #Sigmab <- riwish(nu0 + num_clusters, c0 + crossprod(b))
-    #taub <- 1 / Sigmab
-    
-  #}
-  
   # Helper function to find t-value (>1.96 when num_clusters is small)
   find_tval <- function(ests, varests, numimp) {
     nu <- (numimp - 1)*(1 + numimp*colMeans(varests) /
@@ -782,8 +604,11 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
 }
 
 
-# Send simulations to computing cluster
+# Send simulations to HPC (vary num_clusters argument, 20/50/100)
+# 1000 at a time max, vary second_thousand argument for 2000 total
 nsims <- 1000
+second_thousand <- FALSE
+
 ICC_out <- 0.1
 ICC_mod <- 0.1
 num_clusters <- 100
@@ -791,20 +616,21 @@ combos <- data.frame(trials = seq(1, nsims),
                      ICC_outs = rep(ICC_out, nsims),
                      ICC_mods = rep(ICC_mod, nsims),
                      num_clusterss = rep(num_clusters, nsims))
-#i <- as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
-i <- as.numeric(Sys.getenv("LSB_JOBINDEX"))
-combo_i <- combos[(i), ]
+i <- as.numeric(Sys.getenv("LSB_JOBINDEX") + 1000*second_thousand)
+combo_i <- combos[(i - 1000*second_thousand), ]
 
 set.seed(i*1000)
 sim <- with(combo_i, mapply(simulator, trials, ICC_outs, ICC_mods,
                             num_clusterss))
 
-# Output
+# Output for local computing
 #outfile <- paste("./Results/results_mod_XM_Iout_", ICC_out, "_Imod_",
                  #ICC_mod, "_nc_", num_clusters, "_",
                  #i, ".Rdata", sep = "")
+
+# Output for HPC computing
 outfile <-
-  paste("/project/mharhaylab/blette/4_7_22/Results/results_notout",
+  paste("/project/mharhaylab/blette/4_7_22/Results/results_out",
         "_Iout_", ICC_out, "_Imod_", ICC_mod, "_nc_", num_clusters,
         "_", i, ".Rdata", sep = "")
 save(sim, file = outfile)
