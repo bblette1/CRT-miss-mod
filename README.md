@@ -4,7 +4,7 @@ This repository contains files used for the simulations and applications of "Ass
 
 ### Replication of simulation study
 
-The file *crt-hte-missing-modifier.R* can be used to replicate Scenario 1 of the simulation study and the file *crt-hte-missing-modifier.R* can be used to replicate Scenario 2 of the simulation study. Run the simulator function in each file for 2000 replications for each of `num_clusters %in% c(20, 50, 100)` with the input seed structure described at the bottom of the files. To make the main figures of the paper, see *make-sim-fig.R*.
+The file *crt-hte-missing-modifier.R* can be used to replicate Scenario 1 of the simulation study and the file *crt-hte-missing-modifier2.R* can be used to replicate Scenario 2 of the simulation study. Run the simulator function in each file for 2000 replications for each of `num_clusters %in% c(20, 50, 100)` with the input seed structure described at the bottom of the files. The corresponding shell script files are specific to the first author's institution's computing cluster, but may be useful for other computing environments. To make the main figures of the paper, see *make-sim-fig.R*.
 
 ### Replication of application
 
