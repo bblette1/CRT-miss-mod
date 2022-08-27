@@ -43,10 +43,6 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
   alpha1_var <- Y_resvar * ICC_out / (1 - ICC_out)
   alpha1 <- rnorm(num_clusters, 0, sqrt(alpha1_var))
   df$Y <- 1 + 1.5*df$A + df$Mfull - 0.75*df$A*df$Mfull +
-    #0.7*df$X +
-    #0.7*df$X*df$A +
-    #0.7*df$X*df$Mfull +
-    #0.7*df$X*df$Mfull*df$A +
     0.8*df$X*df$A - 0.4*df$X*df$Mfull + 0.7*df$X*df$Mfull*df$A +
     rep(alpha1, size_clusters) + rnorm(n, 0, sqrt(Y_resvar))
   
@@ -57,11 +53,7 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
   
   df$M <- NA
   df$M[df$R == 1] <- df$Mfull[df$R == 1]
-  
-  # Add interactions to data for JAV analyses
-  df$AM <- df$A*df$M
-  df$XAM <- df$X*df$A*df$M
-  
+
   
   ###########################################################################
   # Data analysis

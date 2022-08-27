@@ -60,10 +60,6 @@ simulator <- function(trial, ICC_out, ICC_mod, ICC_miss, num_clusters) {
   df$M <- NA
   df$M[df$R == 1] <- df$Mfull[df$R == 1]
   
-  # Add interactions to data for JAV analyses
-  #df$AM <- df$A*df$M
-  #df$XAM <- df$X*df$A*df$M
-  
   
   ###########################################################################
   # Data analysis
