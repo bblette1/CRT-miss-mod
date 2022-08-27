@@ -3,11 +3,9 @@ rm(list = ls())
 
 # Load libraries
 library(BayesLogit)
-library(dbarts)
 library(dplyr)
 library(geepack)
 library(ggplot2)
-library(jomo)
 library(lme4)
 library(matrixStats)
 library(MCMCpack)
