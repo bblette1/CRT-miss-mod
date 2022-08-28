@@ -5,11 +5,11 @@ rm(list = ls())
 library(BayesLogit)
 library(dplyr)
 library(geepack)
+#library(geesmv)
 library(ggplot2)
 library(lme4)
 library(matrixStats)
 library(MCMCpack)
-library(mitml)
 library(mvtnorm)
 
 # Simulator function
@@ -22,6 +22,9 @@ simulator <- function(trial, ICC_out, ICC_mod, ICC_miss, num_clusters, beta3) {
   df <- data.frame(cluster_ID = rep(1:num_clusters, size_clusters))
   df <- df %>% group_by(cluster_ID) %>%
     mutate(ind_ID = row_number(cluster_ID))
+  
+  # Duplicate ID variable for geesmv package functions
+  #df$id <- df$cluster_ID
   
   # Treatment arm
   treated <- sample(1:num_clusters, num_clusters/2, replace = FALSE)
@@ -64,13 +67,15 @@ simulator <- function(trial, ICC_out, ICC_mod, ICC_miss, num_clusters, beta3) {
   ###########################################################################
   # Data analysis
   # Truth
-  truemod <- geeglm(Y ~ A*Mfull*X1 + X2:A:Mfull + X3:A:Mfull,
+  df$Mcentfull <- df$Mfull - mean(df$Mfull)
+  truemod <- geeglm(Y ~ A*Mcentfull*X1 + X2:A:Mcentfull + X3:A:Mcentfull,
                     family = "gaussian", data = df,
                     id = cluster_ID, corstr = "exchangeable")
   
   ###################
   # Method 1: CRA-GEE
-  mod1 <- geeglm(Y ~ A*M, family = "gaussian",
+  df$Mcent <- df$M - mean(df$M, na.rm = T)
+  mod1 <- geeglm(Y ~ A*Mcent, family = "gaussian",
                  data = df[!is.na(df$M), ],
                  id = cluster_ID, corstr = "exchangeable")
   
@@ -83,7 +88,9 @@ simulator <- function(trial, ICC_out, ICC_mod, ICC_miss, num_clusters, beta3) {
   dfimp2$M[is.na(dfimp2$M)] <- rbinom(sum(is.na(df$M)), 1,
                                       predict(impmod2, df[is.na(df$M), ],
                                               type = "response"))
-  mod2 <- geeglm(Y ~ A*M, family = "gaussian", data = dfimp2,
+  dfimp2$Mcent <- dfimp2$M - mean(dfimp2$M)
+  
+  mod2 <- geeglm(Y ~ A*Mcent, family = "gaussian", data = dfimp2,
                  id = cluster_ID, corstr = "exchangeable")
   
   # Method 3: Single imputation under X + A*Y model
@@ -93,7 +100,9 @@ simulator <- function(trial, ICC_out, ICC_mod, ICC_miss, num_clusters, beta3) {
   dfimp3$M[is.na(dfimp3$M)] <- rbinom(sum(is.na(df$M)), 1,
                                       predict(impmod3, df[is.na(df$M), ],
                                               type = "response"))
-  mod3 <- geeglm(Y ~ A*M, family = "gaussian", data = dfimp3,
+  dfimp3$Mcent <- dfimp3$M - mean(dfimp3$M)
+  
+  mod3 <- geeglm(Y ~ A*Mcent, family = "gaussian", data = dfimp3,
                  id = cluster_ID, corstr = "exchangeable")
   
   # Method 4: Single imputation under X*A + Y model
@@ -103,7 +112,9 @@ simulator <- function(trial, ICC_out, ICC_mod, ICC_miss, num_clusters, beta3) {
   dfimp4$M[is.na(dfimp4$M)] <- rbinom(sum(is.na(df$M)), 1,
                                       predict(impmod4, df[is.na(df$M), ],
                                               type = "response"))
-  mod4 <- geeglm(Y ~ A*M, family = "gaussian", data = dfimp4,
+  dfimp4$Mcent <- dfimp4$M - mean(dfimp4$M)
+  
+  mod4 <- geeglm(Y ~ A*Mcent, family = "gaussian", data = dfimp4,
                  id = cluster_ID, corstr = "exchangeable")
   
   # Method 5: Single imputation under X*A + Y*A model
@@ -113,7 +124,9 @@ simulator <- function(trial, ICC_out, ICC_mod, ICC_miss, num_clusters, beta3) {
   dfimp5$M[is.na(dfimp5$M)] <- rbinom(sum(is.na(df$M)), 1,
                                       predict(impmod5, df[is.na(df$M), ],
                                               type = "response"))
-  mod5 <- geeglm(Y ~ A*M, family = "gaussian", data = dfimp5,
+  dfimp5$Mcent <- dfimp5$M - mean(dfimp5$M)
+  
+  mod5 <- geeglm(Y ~ A*Mcent, family = "gaussian", data = dfimp5,
                  id = cluster_ID, corstr = "exchangeable")
   
   # Method 6: Single imputation under X*A*Y model
@@ -123,7 +136,9 @@ simulator <- function(trial, ICC_out, ICC_mod, ICC_miss, num_clusters, beta3) {
   dfimp6$M[is.na(dfimp6$M)] <- rbinom(sum(is.na(df$M)), 1,
                                       predict(impmod6, df[is.na(df$M), ],
                                               type = "response"))
-  mod6 <- geeglm(Y ~ A*M, family = "gaussian", data = dfimp6,
+  dfimp6$Mcent <- dfimp6$M - mean(dfimp6$M)
+  
+  mod6 <- geeglm(Y ~ A*Mcent, family = "gaussian", data = dfimp6,
                  id = cluster_ID, corstr = "exchangeable")
   
   ###########################################
@@ -161,7 +176,9 @@ simulator <- function(trial, ICC_out, ICC_mod, ICC_miss, num_clusters, beta3) {
     dfimp7$M[is.na(dfimp7$M)] <-
       rbinom(sum(is.na(df$M)), 1, predict(impmod2, df[is.na(df$M), ],
                                           type = "response"))
-    mod7 <- geeglm(Y ~ A*M, family = "gaussian", data = dfimp7,
+    dfimp7$Mcent <- dfimp7$M - mean(dfimp7$M)
+    
+    mod7 <- geeglm(Y ~ A*Mcent, family = "gaussian", data = dfimp7,
                    id = cluster_ID, corstr = "exchangeable")
     ests7[m, ] <- coef(mod7)
     varests7[m, ] <- (summary(mod7)$coefficients[, 2])^2
@@ -171,7 +188,9 @@ simulator <- function(trial, ICC_out, ICC_mod, ICC_miss, num_clusters, beta3) {
     dfimp8$M[is.na(dfimp8$M)] <-
       rbinom(sum(is.na(df$M)), 1, predict(impmod3, df[is.na(df$M), ],
                                           type = "response"))
-    mod8 <- geeglm(Y ~ A*M, family = "gaussian", data = dfimp8,
+    dfimp8$Mcent <- dfimp8$M - mean(dfimp8$M)
+    
+    mod8 <- geeglm(Y ~ A*Mcent, family = "gaussian", data = dfimp8,
                    id = cluster_ID, corstr = "exchangeable")
     ests8[m, ] <- coef(mod8)
     varests8[m, ] <- (summary(mod8)$coefficients[, 2])^2
@@ -181,7 +200,9 @@ simulator <- function(trial, ICC_out, ICC_mod, ICC_miss, num_clusters, beta3) {
     dfimp9$M[is.na(dfimp9$M)] <-
       rbinom(sum(is.na(df$M)), 1, predict(impmod4, df[is.na(df$M), ],
                                           type = "response"))
-    mod9 <- geeglm(Y ~ A*M, family = "gaussian", data = dfimp9,
+    dfimp9$Mcent <- dfimp9$M - mean(dfimp9$M)
+    
+    mod9 <- geeglm(Y ~ A*Mcent, family = "gaussian", data = dfimp9,
                    id = cluster_ID, corstr = "exchangeable")
     ests9[m, ] <- coef(mod9)
     varests9[m, ] <- (summary(mod9)$coefficients[, 2])^2
@@ -191,7 +212,9 @@ simulator <- function(trial, ICC_out, ICC_mod, ICC_miss, num_clusters, beta3) {
     dfimp10$M[is.na(dfimp10$M)] <-
       rbinom(sum(is.na(df$M)), 1, predict(impmod5, df[is.na(df$M), ],
                                           type = "response"))
-    mod10 <- geeglm(Y ~ A*M, family = "gaussian", data = dfimp10,
+    dfimp10$Mcent <- dfimp10$M - mean(dfimp10$M)
+    
+    mod10 <- geeglm(Y ~ A*Mcent, family = "gaussian", data = dfimp10,
                     id = cluster_ID, corstr = "exchangeable")
     ests10[m, ] <- coef(mod10)
     varests10[m, ] <- (summary(mod10)$coefficients[, 2])^2
@@ -201,7 +224,9 @@ simulator <- function(trial, ICC_out, ICC_mod, ICC_miss, num_clusters, beta3) {
     dfimp11$M[is.na(dfimp11$M)] <-
       rbinom(sum(is.na(df$M)), 1, predict(impmod6, df[is.na(df$M), ],
                                           type = "response"))
-    mod11 <- geeglm(Y ~ A*M, family = "gaussian", data = dfimp11,
+    dfimp11$Mcent <- dfimp11$M - mean(dfimp11$M)
+    
+    mod11 <- geeglm(Y ~ A*Mcent, family = "gaussian", data = dfimp11,
                     id = cluster_ID, corstr = "exchangeable")
     ests11[m, ] <- coef(mod11)
     varests11[m, ] <- (summary(mod11)$coefficients[, 2])^2
@@ -213,7 +238,9 @@ simulator <- function(trial, ICC_out, ICC_mod, ICC_miss, num_clusters, beta3) {
     dfimp12$M[is.na(dfimp12$M)] <-
       rbinom(sum(is.na(df$M)), 1, predict(impmod12, df[is.na(df$M), ],
                                           type = "response"))
-    mod12 <- geeglm(Y ~ A*M, family = "gaussian", data = dfimp12,
+    dfimp12$Mcent <- dfimp12$M - mean(dfimp12$M)
+    
+    mod12 <- geeglm(Y ~ A*Mcent, family = "gaussian", data = dfimp12,
                     id = cluster_ID, corstr = "exchangeable")
     ests12[m, ] <- coef(mod12)
     varests12[m, ] <- (summary(mod12)$coefficients[, 2])^2
@@ -223,7 +250,9 @@ simulator <- function(trial, ICC_out, ICC_mod, ICC_miss, num_clusters, beta3) {
     dfimp13$M[is.na(dfimp13$M)] <-
       rbinom(sum(is.na(df$M)), 1, predict(impmod13, df[is.na(df$M), ],
                                           type = "response"))
-    mod13 <- geeglm(Y ~ A*M, family = "gaussian", data = dfimp13,
+    dfimp13$Mcent <- dfimp13$M - mean(dfimp13$M)
+    
+    mod13 <- geeglm(Y ~ A*Mcent, family = "gaussian", data = dfimp13,
                     id = cluster_ID, corstr = "exchangeable")
     ests13[m, ] <- coef(mod13)
     varests13[m, ] <- (summary(mod13)$coefficients[, 2])^2
@@ -233,7 +262,9 @@ simulator <- function(trial, ICC_out, ICC_mod, ICC_miss, num_clusters, beta3) {
     dfimp14$M[is.na(dfimp14$M)] <-
       rbinom(sum(is.na(df$M)), 1, predict(impmod14, df[is.na(df$M), ],
                                           type = "response"))
-    mod14 <- geeglm(Y ~ A*M, family = "gaussian", data = dfimp14,
+    dfimp14$Mcent <- dfimp14$M - mean(dfimp14$M)
+    
+    mod14 <- geeglm(Y ~ A*Mcent, family = "gaussian", data = dfimp14,
                     id = cluster_ID, corstr = "exchangeable")
     ests14[m, ] <- coef(mod14)
     varests14[m, ] <- (summary(mod14)$coefficients[, 2])^2
@@ -243,7 +274,9 @@ simulator <- function(trial, ICC_out, ICC_mod, ICC_miss, num_clusters, beta3) {
     dfimp15$M[is.na(dfimp15$M)] <-
       rbinom(sum(is.na(df$M)), 1, predict(impmod15, df[is.na(df$M), ],
                                           type = "response"))
-    mod15 <- geeglm(Y ~ A*M, family = "gaussian", data = dfimp15,
+    dfimp15$Mcent <- dfimp15$M - mean(dfimp15$M)
+    
+    mod15 <- geeglm(Y ~ A*Mcent, family = "gaussian", data = dfimp15,
                     id = cluster_ID, corstr = "exchangeable")
     ests15[m, ] <- coef(mod15)
     varests15[m, ] <- (summary(mod15)$coefficients[, 2])^2
@@ -253,7 +286,9 @@ simulator <- function(trial, ICC_out, ICC_mod, ICC_miss, num_clusters, beta3) {
     dfimp16$M[is.na(dfimp16$M)] <-
       rbinom(sum(is.na(df$M)), 1, predict(impmod16, df[is.na(df$M), ],
                                           type = "response"))
-    mod16 <- geeglm(Y ~ A*M, family = "gaussian", data = dfimp16,
+    dfimp16$Mcent <- dfimp16$M - mean(dfimp16$M)
+    
+    mod16 <- geeglm(Y ~ A*Mcent, family = "gaussian", data = dfimp16,
                     id = cluster_ID, corstr = "exchangeable")
     ests16[m, ] <- coef(mod16)
     varests16[m, ] <- (summary(mod16)$coefficients[, 2])^2
@@ -297,7 +332,8 @@ simulator <- function(trial, ICC_out, ICC_mod, ICC_miss, num_clusters, beta3) {
     
     # Fit outcome model after burn-in and after each thinning
     if (h > numburn & h %% thin == 0) {
-      mod17 <- geeglm(Y ~ A*M, family = "gaussian", data = dfimp17,
+      dfimp17$Mcent <- dfimp17$M - mean(dfimp17$M)
+      mod17 <- geeglm(Y ~ A*Mcent, family = "gaussian", data = dfimp17,
                       id = cluster_ID, corstr = "exchangeable")
       ests17[(h - numburn) / thin, ] <- coef(mod17)
       varests17[(h - numburn) / thin, ] <- (summary(mod17)$coefficients[, 2])^2
@@ -352,7 +388,8 @@ simulator <- function(trial, ICC_out, ICC_mod, ICC_miss, num_clusters, beta3) {
     
     # Fit outcome model after burn-in and after each thinning
     if (h > numburn & h %% thin == 0) {
-      mod18 <- geeglm(Y ~ A*M, family = "gaussian", data = dfimp18,
+      dfimp18$Mcent <- dfimp18$M - mean(dfimp18$M)
+      mod18 <- geeglm(Y ~ A*Mcent, family = "gaussian", data = dfimp18,
                       id = cluster_ID, corstr = "exchangeable")
       ests18[(h - numburn) / thin, ] <- coef(mod18)
       varests18[(h - numburn) / thin, ] <- (summary(mod18)$coefficients[, 2])^2
@@ -408,7 +445,8 @@ simulator <- function(trial, ICC_out, ICC_mod, ICC_miss, num_clusters, beta3) {
     
     # Fit outcome model after burn-in and after each thinning
     if (h > numburn & h %% thin == 0) {
-      mod19 <- geeglm(Y ~ A*M, family = "gaussian", data = dfimp19,
+      dfimp19$Mcent <- dfimp19$M - mean(dfimp19$M)
+      mod19 <- geeglm(Y ~ A*Mcent, family = "gaussian", data = dfimp19,
                       id = cluster_ID, corstr = "exchangeable")
       ests19[(h - numburn) / thin, ] <- coef(mod19)
       varests19[(h - numburn) / thin, ] <- (summary(mod19)$coefficients[, 2])^2
@@ -464,7 +502,8 @@ simulator <- function(trial, ICC_out, ICC_mod, ICC_miss, num_clusters, beta3) {
     
     # Fit outcome model after burn-in and after each thinning
     if (h > numburn & h %% thin == 0) {
-      mod20 <- geeglm(Y ~ A*M, family = "gaussian", data = dfimp20,
+      dfimp20$Mcent <- dfimp20$M - mean(dfimp20$M)
+      mod20 <- geeglm(Y ~ A*Mcent, family = "gaussian", data = dfimp20,
                       id = cluster_ID, corstr = "exchangeable")
       ests20[(h - numburn) / thin, ] <- coef(mod20)
       varests20[(h - numburn) / thin, ] <- (summary(mod20)$coefficients[, 2])^2
@@ -521,7 +560,8 @@ simulator <- function(trial, ICC_out, ICC_mod, ICC_miss, num_clusters, beta3) {
     
     # Fit outcome model after burn-in and after each thinning
     if (h > numburn & h %% thin == 0) {
-      mod21 <- geeglm(Y ~ A*M, family = "gaussian", data = dfimp21,
+      dfimp21$Mcent <- dfimp21$M - mean(dfimp21$M)
+      mod21 <- geeglm(Y ~ A*Mcent, family = "gaussian", data = dfimp21,
                       id = cluster_ID, corstr = "exchangeable")
       ests21[(h - numburn) / thin, ] <- coef(mod21)
       varests21[(h - numburn) / thin, ] <- (summary(mod21)$coefficients[, 2])^2
