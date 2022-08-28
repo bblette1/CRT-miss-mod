@@ -13,7 +13,7 @@ library(mitml)
 library(mvtnorm)
 
 # Simulator function
-simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
+simulator <- function(trial, ICC_out, ICC_mod, num_clusters, beta3) {
   
   # Data simulation
   size_clusters <- rpois(num_clusters, 50)
@@ -42,7 +42,7 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
   Y_resvar <- 3
   alpha1_var <- Y_resvar * ICC_out / (1 - ICC_out)
   alpha1 <- rnorm(num_clusters, 0, sqrt(alpha1_var))
-  df$Y <- 1 + 1.5*df$A + df$Mfull - 0.75*df$A*df$Mfull +
+  df$Y <- 1 + 1*df$A + 0.75*df$Mfull + beta3*df$A*df$Mfull +
     0.8*df$X*df$A - 0.4*df$X*df$Mfull + 0.7*df$X*df$Mfull*df$A +
     rep(alpha1, size_clusters) + rnorm(n, 0, sqrt(Y_resvar))
   
@@ -594,24 +594,29 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters) {
 }
 
 
-# Send simulations to HPC (vary num_clusters argument, 20/50/100)
-# 1000 at a time max, vary second_thousand argument for 2000 total
+# Send simulations to HPC
+# Vary num_clusters argument to 20, 50, and 100
+# Vary beta3 argument to 0 and -(1 + exp(0.5)) / exp(0.5)
+# Fix ICC_out = ICC_mod = 0.1
+# 1000 sim max, not one big run, vary second_thousand argument for 2000 total
 nsims <- 1000
 second_thousand <- FALSE
 
 ICC_out <- 0.1
 ICC_mod <- 0.1
-num_clusters <- 100
+num_clusters <- 20
+beta3 <- 0
 combos <- data.frame(trials = seq(1, nsims),
                      ICC_outs = rep(ICC_out, nsims),
                      ICC_mods = rep(ICC_mod, nsims),
-                     num_clusterss = rep(num_clusters, nsims))
+                     num_clusterss = rep(num_clusters, nsims),
+                     beta3s = rep(beta3, nsims))
 i <- as.numeric(Sys.getenv("LSB_JOBINDEX") + 1000*second_thousand)
 combo_i <- combos[(i - 1000*second_thousand), ]
 
 set.seed(i*1000)
 sim <- with(combo_i, mapply(simulator, trials, ICC_outs, ICC_mods,
-                            num_clusterss))
+                            num_clusterss, beta3s))
 
 # Output for local computing
 #outfile <- paste("./Results/results_mod_XM_Iout_", ICC_out, "_Imod_",
@@ -620,7 +625,7 @@ sim <- with(combo_i, mapply(simulator, trials, ICC_outs, ICC_mods,
 
 # Output for HPC computing
 outfile <-
-  paste("/project/mharhaylab/blette/4_7_22/Results/results_out",
-        "_Iout_", ICC_out, "_Imod_", ICC_mod, "_nc_", num_clusters,
+  paste("/project/mharhaylab/blette/8_29_22/Results/results_",
+        "nc_", num_clusters, "beta3_", beta3,
         "_", i, ".Rdata", sep = "")
 save(sim, file = outfile)
