@@ -2,24 +2,31 @@ rm(list = ls())
 library(ggplot2)
 
 # True values of parameters
-true_int <- -0.75
-true_ate <- 1.5 - 0.75*exp(0.5) / (1 + exp(0.5))
+#true_int <- -0.75
+#true_ate <- 1.5 - 0.75*exp(0.5) / (1 + exp(0.5))
 pl <- 4 # length of parameter vector
 
 # Make dataset to create figures
-makeSimFig <- function(type, nsims, ICC_out, ICC_mod) {
+makeSimFig <- function(nsims, beta3name, type) {
+  
+  if (beta3name == 0) {
+    true_int <- 0
+    true_ate <- 1
+  }
+  if (beta3name == -1.61) {
+    true_int <- -(1 + exp(0.5)) / exp(0.5)
+    true_ate <- 0
+  }
   
   ###########################################################
   # 20 clusters
   num_clusters <- 20
   results <- array(NA, dim = c(nsims, 228))
   for (i in 1:nsims) {
-    if( file.exists(paste("./Results/results_", type, "_Iout_", ICC_out,
-                          "_Imod_", ICC_mod, "_nc_",
-                          num_clusters, "_", i, ".Rdata", sep = ""))) {
-      load(paste("./Results/results_", type, "_Iout_", ICC_out,
-                 "_Imod_", ICC_mod, "_nc_",
-                 num_clusters, "_", i, ".Rdata", sep = ""))
+    if( file.exists(paste("./Results/results", type, "_nc_", num_clusters,
+                          "_beta3_", beta3name, "_", i, ".Rdata", sep = ""))) {
+      load(paste("./Results/results", type, "_nc_", num_clusters, "_beta3_",
+                 beta3name, "_", i, ".Rdata", sep = ""))
       results[i, ] <- sim
     }
   }
@@ -31,8 +38,7 @@ makeSimFig <- function(type, nsims, ICC_out, ICC_mod) {
            (nsims - 1))
   
   # Bias for ATE
-  est20_ate <- results[, seq(2, 82, by = 4)] +
-               exp(0.5) / (1 + exp(0.5)) * results[, seq(4, 84, by = 4)]
+  est20_ate <- results[, seq(2, 82, by = 4)]
   bias20_ate <- colMeans(est20_ate, na.rm = T) - true_ate
   bias20_ate_mcse <- sqrt(colMeans((est20_ate - true_ate)^2, na.rm = T) /
                             (nsims - 1))
@@ -58,19 +64,17 @@ makeSimFig <- function(type, nsims, ICC_out, ICC_mod) {
   # Coverage for ATE
   cov20_ate <- rep(NA, 21)
   for (i in 1:6) {
-    se <- sqrt((results[, ((i + 21)*pl - 2)])^2 +
-                 (0.622^2)*(results[, (i + 21)*pl])^2)
     cov20_ate[i] <-
-      mean(1*(est20_ate[, i] - 1.96*se < true_ate &
-                est20_ate[, i] + 1.96*se > true_ate),
+      mean(1*(est20_ate[, i] - 1.96*results[, ((i + 21)*pl - 2)] < true_ate &
+                est20_ate[, i] + 1.96*results[, ((i + 21)*pl - 2)] > true_ate),
            na.rm = T)
   }
   for (i in 7:21) {
-    se <- sqrt((results[, ((i + 21)*pl - 2)])^2 +
-                 (0.622^2)*(results[, (i + 21)*pl])^2)
     cov20_ate[i] <-
-      mean(1*(est20_ate[, i] - results[, (i + 36)*pl]*se < true_ate &
-                est20_ate[, i] + results[, (i + 36)*pl]*se > true_ate),
+      mean(1*(est20_ate[, i] - results[, ((i + 36)*pl - 2)]*
+                results[, ((i + 21)*pl - 2)] < true_ate &
+                est20_ate[, i] + results[, ((i + 36)*pl - 2)]*
+                results[, ((i + 21)*pl - 2)] > true_ate),
            na.rm = T)
   }
   cov20_ate_mcse <- sqrt(cov20_ate*(1 - cov20_ate) / nsims)
@@ -109,19 +113,17 @@ makeSimFig <- function(type, nsims, ICC_out, ICC_mod) {
   # Power for ATE
   power20_ate <- rep(NA, 21)
   for (i in 1:6) {
-    se <- sqrt((results[, ((i + 21)*pl - 2)])^2 +
-                 (0.622^2)*(results[, (i + 21)*pl])^2)
     power20_ate[i] <-
-      mean(1*(est20_ate[, i] - 1.96*se > 0 |
-                est20_ate[, i] + 1.96*se < 0),
+      mean(1*(est20_ate[, i] - 1.96*results[, ((i + 21)*pl - 2)] > 0 |
+                est20_ate[, i] + 1.96*results[, ((i + 21)*pl - 2)] < 0),
            na.rm = T)
   }
   for (i in 7:21) {
-    se <- sqrt((results[, ((i + 21)*pl - 2)])^2 +
-                 (0.622^2)*(results[, (i + 21)*pl])^2)
     power20_ate[i] <-
-      mean(1*(est20_ate[, i] - results[, (i + 36)*pl]*se > 0 |
-                est20_ate[, i] + results[, (i + 36)*pl]*se < 0),
+      mean(1*(est20_ate[, i] - results[, ((i + 36)*pl - 2)]*
+                results[, ((i + 21)*pl - 2)]> 0 |
+                est20_ate[, i] + results[, ((i + 36)*pl - 2)]*
+                results[, ((i + 21)*pl - 2)]< 0),
            na.rm = T)
   }
   power20_ate_mcse <- sqrt(power20_ate*(1 - power20_ate) / nsims)
@@ -131,12 +133,10 @@ makeSimFig <- function(type, nsims, ICC_out, ICC_mod) {
   num_clusters <- 50
   results <- array(NA, dim = c(nsims, 228))
   for (i in 1:nsims) {
-    if( file.exists(paste("./Results/results_", type, "_Iout_", ICC_out,
-                          "_Imod_", ICC_mod, "_nc_",
-                          num_clusters, "_", i, ".Rdata", sep = ""))) {
-      load(paste("./Results/results_", type, "_Iout_", ICC_out,
-                 "_Imod_", ICC_mod, "_nc_",
-                 num_clusters, "_", i, ".Rdata", sep = ""))
+    if( file.exists(paste("./Results/results", type, "_nc_", num_clusters,
+                          "_beta3_", beta3name, "_", i, ".Rdata", sep = ""))) {
+      load(paste("./Results/results", type, "_nc_", num_clusters, "_beta3_",
+                 beta3name, "_", i, ".Rdata", sep = ""))
       results[i, ] <- sim
     }
   }
@@ -148,8 +148,7 @@ makeSimFig <- function(type, nsims, ICC_out, ICC_mod) {
            (nsims - 1))
   
   # Bias for ATE
-  est50_ate <- results[, seq(2, 82, by = 4)] +
-               exp(0.5) / (1 + exp(0.5)) * results[, seq(4, 84, by = 4)]
+  est50_ate <- results[, seq(2, 82, by = 4)]
   bias50_ate <- colMeans(est50_ate, na.rm = T) - true_ate
   bias50_ate_mcse <- sqrt(colMeans((est50_ate - true_ate)^2, na.rm = T) /
                             (nsims - 1))
@@ -175,19 +174,17 @@ makeSimFig <- function(type, nsims, ICC_out, ICC_mod) {
   # Coverage for ATE
   cov50_ate <- rep(NA, 21)
   for (i in 1:6) {
-    se <- sqrt((results[, ((i + 21)*pl - 2)])^2 +
-                 (0.622^2)*(results[, (i + 21)*pl])^2)
     cov50_ate[i] <-
-      mean(1*(est50_ate[, i] - 1.96*se < true_ate &
-                est50_ate[, i] + 1.96*se > true_ate),
+      mean(1*(est50_ate[, i] - 1.96*results[, ((i + 21)*pl - 2)] < true_ate &
+                est50_ate[, i] + 1.96*results[, ((i + 21)*pl - 2)] > true_ate),
            na.rm = T)
   }
   for (i in 7:21) {
-    se <- sqrt((results[, ((i + 21)*pl - 2)])^2 +
-                 (0.622^2)*(results[, (i + 21)*pl])^2)
     cov50_ate[i] <-
-      mean(1*(est50_ate[, i] - results[, (i + 36)*pl]*se < true_ate &
-                est50_ate[, i] + results[, (i + 36)*pl]*se > true_ate),
+      mean(1*(est50_ate[, i] - results[, ((i + 36)*pl - 2)]*
+                results[, ((i + 21)*pl - 2)] < true_ate &
+                est50_ate[, i] + results[, ((i + 36)*pl - 2)]*
+                results[, ((i + 21)*pl - 2)] > true_ate),
            na.rm = T)
   }
   cov50_ate_mcse <- sqrt(cov50_ate*(1 - cov50_ate) / nsims)
@@ -227,19 +224,17 @@ makeSimFig <- function(type, nsims, ICC_out, ICC_mod) {
   # Power for ATE
   power50_ate <- rep(NA, 21)
   for (i in 1:6) {
-    se <- sqrt((results[, ((i + 21)*pl - 2)])^2 +
-                 (0.622^2)*(results[, (i + 21)*pl])^2)
     power50_ate[i] <-
-      mean(1*(est50_ate[, i] - 1.96*se > 0 |
-                est50_ate[, i] + 1.96*se < 0),
+      mean(1*(est50_ate[, i] - 1.96*results[, ((i + 21)*pl - 2)] > 0 |
+                est50_ate[, i] + 1.96*results[, ((i + 21)*pl - 2)] < 0),
            na.rm = T)
   }
   for (i in 7:21) {
-    se <- sqrt((results[, ((i + 21)*pl - 2)])^2 +
-                 (0.622^2)*(results[, (i + 21)*pl])^2)
     power50_ate[i] <-
-      mean(1*(est50_ate[, i] - results[, (i + 36)*pl]*se > 0 |
-                est50_ate[, i] + results[, (i + 36)*pl]*se < 0),
+      mean(1*(est50_ate[, i] - results[, ((i + 36)*pl - 2)]*
+                results[, ((i + 21)*pl - 2)]> 0 |
+                est50_ate[, i] + results[, ((i + 36)*pl - 2)]*
+                results[, ((i + 21)*pl - 2)]< 0),
            na.rm = T)
   }
   power50_ate_mcse <- sqrt(power50_ate*(1 - power50_ate) / nsims)
@@ -249,12 +244,10 @@ makeSimFig <- function(type, nsims, ICC_out, ICC_mod) {
   num_clusters <- 100
   results <- array(NA, dim = c(nsims, 228))
   for (i in 1:nsims) {
-    if( file.exists(paste("./Results/results_", type, "_Iout_", ICC_out,
-                          "_Imod_", ICC_mod, "_nc_",
-                          num_clusters, "_", i, ".Rdata", sep = ""))) {
-      load(paste("./Results/results_", type, "_Iout_", ICC_out,
-                 "_Imod_", ICC_mod, "_nc_",
-                 num_clusters, "_", i, ".Rdata", sep = ""))
+    if( file.exists(paste("./Results/results", type, "_nc_", num_clusters,
+                          "_beta3_", beta3name, "_", i, ".Rdata", sep = ""))) {
+      load(paste("./Results/results", type, "_nc_", num_clusters, "_beta3_",
+                 beta3name, "_", i, ".Rdata", sep = ""))
       results[i, ] <- sim
     }
   }
@@ -266,8 +259,7 @@ makeSimFig <- function(type, nsims, ICC_out, ICC_mod) {
            (nsims - 1))
   
   # Bias for ATE
-  est100_ate <- results[, seq(2, 82, by = 4)] +
-                exp(0.5) / (1 + exp(0.5)) * results[, seq(4, 84, by = 4)]
+  est100_ate <- results[, seq(2, 82, by = 4)]
   bias100_ate <- colMeans(est100_ate, na.rm = T) - true_ate
   bias100_ate_mcse <- sqrt(colMeans((est100_ate - true_ate)^2, na.rm = T) /
                             (nsims - 1))
@@ -293,19 +285,17 @@ makeSimFig <- function(type, nsims, ICC_out, ICC_mod) {
   # Coverage for ATE
   cov100_ate <- rep(NA, 21)
   for (i in 1:6) {
-    se <- sqrt((results[, ((i + 21)*pl - 2)])^2 +
-                 (0.622^2)*(results[, (i + 21)*pl])^2)
     cov100_ate[i] <-
-      mean(1*(est100_ate[, i] - 1.96*se < true_ate &
-                est100_ate[, i] + 1.96*se > true_ate),
+      mean(1*(est100_ate[, i] - 1.96*results[, ((i + 21)*pl - 2)] < true_ate &
+              est100_ate[, i] + 1.96*results[, ((i + 21)*pl - 2)] > true_ate),
            na.rm = T)
   }
   for (i in 7:21) {
-    se <- sqrt((results[, ((i + 21)*pl - 2)])^2 +
-                 (0.622^2)*(results[, (i + 21)*pl])^2)
     cov100_ate[i] <-
-      mean(1*(est100_ate[, i] - results[, (i + 36)*pl]*se < true_ate &
-                est100_ate[, i] + results[, (i + 36)*pl]*se > true_ate),
+      mean(1*(est100_ate[, i] - results[, ((i + 36)*pl - 2)]*
+                results[, ((i + 21)*pl - 2)] < true_ate &
+                est100_ate[, i] + results[, ((i + 36)*pl - 2)]*
+                results[, ((i + 21)*pl - 2)] > true_ate),
            na.rm = T)
   }
   cov100_ate_mcse <- sqrt(cov100_ate*(1 - cov100_ate) / nsims)
@@ -345,19 +335,17 @@ makeSimFig <- function(type, nsims, ICC_out, ICC_mod) {
   # Power for ATE
   power100_ate <- rep(NA, 21)
   for (i in 1:6) {
-    se <- sqrt((results[, ((i + 21)*pl - 2)])^2 +
-                 (0.622^2)*(results[, (i + 21)*pl])^2)
     power100_ate[i] <-
-      mean(1*(est100_ate[, i] - 1.96*se > 0 |
-                est100_ate[, i] + 1.96*se < 0),
+      mean(1*(est100_ate[, i] - 1.96*results[, ((i + 21)*pl - 2)] > 0 |
+                est100_ate[, i] + 1.96*results[, ((i + 21)*pl - 2)] < 0),
            na.rm = T)
   }
   for (i in 7:21) {
-    se <- sqrt((results[, ((i + 21)*pl - 2)])^2 +
-                 (0.622^2)*(results[, (i + 21)*pl])^2)
     power100_ate[i] <-
-      mean(1*(est100_ate[, i] - results[, (i + 36)*pl]*se > 0 |
-                est100_ate[, i] + results[, (i + 36)*pl]*se < 0),
+      mean(1*(est100_ate[, i] - results[, ((i + 36)*pl - 2)]*
+                results[, ((i + 21)*pl - 2)]> 0 |
+                est100_ate[, i] + results[, ((i + 36)*pl - 2)]*
+                results[, ((i + 21)*pl - 2)]< 0),
            na.rm = T)
   }
   power100_ate_mcse <- sqrt(power100_ate*(1 - power100_ate) / nsims)
@@ -392,7 +380,10 @@ makeSimFig <- function(type, nsims, ICC_out, ICC_mod) {
                "Metric" = rep(rep(c("Bias", "Coverage", "MSE", "Power"),
                                   each = 72),
                               2),
-               "Hline" = rep(rep(c(0, 0.95, 0, 0), each = 72), 2),
+               "Hline" = c(rep(c(0, 0.95, 0, (1 - 0.95*(beta3name == 0))),
+                               each = 72),
+                           rep(c(0, 0.95, 0, (1 - 0.95*(beta3name != 0))),
+                               each = 72)),
                "Method" = rep(factor(rep(c("SI", "MI", "MMI", "B-MMI",
                                           rep(c("SI", "MI", "MMI", "B-MMI"),
                                        each = 5)), 12),
@@ -427,10 +418,31 @@ makeSimFig <- function(type, nsims, ICC_out, ICC_mod) {
 
 
 # Plot first simulation scenario results
-figdat1 <- makeSimFig("out", 1000, 0.1, 0.1)[[1]]
-tabdat1 <- makeSimFig("out", 1000, 0.1, 0.1)[[2]]
+figdat1_0 <- makeSimFig(2000, 0, "")[[1]]
+figdat1_1.61 <- makeSimFig(2000, -1.61, "")[[1]]
 
-ggplot(data = figdat1[figdat1$Estimand == "Int", ],
+#tabdat1_0 <- makeSimFig(2000, 0)[[2]]
+
+# Beta3 = 0
+newlabs <- c("Bias", "Coverage", "MSE", "Type I Error")
+names(newlabs) <- c("Bias", "Coverage", "MSE", "Power")
+ggplot(data = figdat1_0[figdat1_0$Estimand == "Int", ],
+       aes(x = Num_Clusters, y = Output, color = Model,
+           shape = Model)) +
+  geom_line() +
+  geom_point() +
+  facet_grid(Metric ~ Method, scales = "free",
+             labeller = labeller(Metric = newlabs)) +
+  geom_hline(aes(yintercept = Hline), color = "black") +
+  #ggtitle("Modifier missing, ICC_out = ICC_mod = 0.1") +
+  xlab("Number of clusters") +
+  scale_x_continuous(breaks = c(20, 50, 100)) +
+  ylab("") +
+  theme_light() +
+  theme(panel.spacing = unit(0.75, "lines")) +
+  theme(strip.background = element_rect(fill = "dark blue"))
+
+ggplot(data = figdat1_0[figdat1_0$Estimand == "ATE", ],
        aes(x = Num_Clusters, y = Output, color = Model,
            shape = Model)) +
   geom_line() +
@@ -445,12 +457,29 @@ ggplot(data = figdat1[figdat1$Estimand == "Int", ],
   theme(panel.spacing = unit(0.75, "lines")) +
   theme(strip.background = element_rect(fill = "dark blue"))
 
-ggplot(data = figdat1[figdat1$Estimand == "ATE", ],
+# Beta3 = -1.61
+ggplot(data = figdat1_1.61[figdat1_1.61$Estimand == "Int", ],
        aes(x = Num_Clusters, y = Output, color = Model,
            shape = Model)) +
   geom_line() +
   geom_point() +
   facet_grid(Metric ~ Method, scales = "free") +
+  geom_hline(aes(yintercept = Hline), color = "black") +
+  #ggtitle("Modifier missing, ICC_out = ICC_mod = 0.1") +
+  xlab("Number of clusters") +
+  scale_x_continuous(breaks = c(20, 50, 100)) +
+  ylab("") +
+  theme_light() +
+  theme(panel.spacing = unit(0.75, "lines")) +
+  theme(strip.background = element_rect(fill = "dark blue"))
+
+ggplot(data = figdat1_1.61[figdat1_1.61$Estimand == "ATE", ],
+       aes(x = Num_Clusters, y = Output, color = Model,
+           shape = Model)) +
+  geom_line() +
+  geom_point() +
+  facet_grid(Metric ~ Method, scales = "free",
+             labeller = labeller(Metric = newlabs)) +
   geom_hline(aes(yintercept = Hline), color = "black") +
   #ggtitle("Modifier missing, ICC_out = ICC_mod = 0.1") +
   xlab("Number of clusters") +
@@ -463,9 +492,26 @@ ggplot(data = figdat1[figdat1$Estimand == "ATE", ],
 
 
 # Plot second simulation scenario results
-figdat2 <- makeSimFig("out2", 1000, 0.1, 0.1)
+figdat2_0 <- makeSimFig(2000, 0, "2")[[1]]
+figdat2_1.61 <- makeSimFig(2000, -1.61, "2")[[1]]
 
-ggplot(data = figdat2[figdat2$Estimand == "Int", ],
+ggplot(data = figdat2_0[figdat2_0$Estimand == "Int", ],
+       aes(x = Num_Clusters, y = Output, color = Model,
+           shape = Model)) +
+  geom_line() +
+  geom_point() +
+  facet_grid(Metric ~ Method, scales = "free",
+             labeller = labeller(Metric = newlabs)) +
+  geom_hline(aes(yintercept = Hline), color = "black") +
+  #ggtitle("Modifier missing, ICC_out = ICC_mod = 0.1") +
+  xlab("Number of clusters") +
+  scale_x_continuous(breaks = c(20, 50, 100)) +
+  ylab("") +
+  theme_light() +
+  theme(panel.spacing = unit(0.75, "lines")) +
+  theme(strip.background = element_rect(fill = "dark blue"))
+
+ggplot(data = figdat2_0[figdat2_0$Estimand == "ATE", ],
        aes(x = Num_Clusters, y = Output, color = Model,
            shape = Model)) +
   geom_line() +
@@ -480,12 +526,29 @@ ggplot(data = figdat2[figdat2$Estimand == "Int", ],
   theme(panel.spacing = unit(0.75, "lines")) +
   theme(strip.background = element_rect(fill = "dark blue"))
 
-ggplot(data = figdat2[figdat2$Estimand == "ATE", ],
+# Beta3 = -1.61
+ggplot(data = figdat2_1.61[figdat2_1.61$Estimand == "Int", ],
        aes(x = Num_Clusters, y = Output, color = Model,
            shape = Model)) +
   geom_line() +
   geom_point() +
   facet_grid(Metric ~ Method, scales = "free") +
+  geom_hline(aes(yintercept = Hline), color = "black") +
+  #ggtitle("Modifier missing, ICC_out = ICC_mod = 0.1") +
+  xlab("Number of clusters") +
+  scale_x_continuous(breaks = c(20, 50, 100)) +
+  ylab("") +
+  theme_light() +
+  theme(panel.spacing = unit(0.75, "lines")) +
+  theme(strip.background = element_rect(fill = "dark blue"))
+
+ggplot(data = figdat2_1.61[figdat2_1.61$Estimand == "ATE", ],
+       aes(x = Num_Clusters, y = Output, color = Model,
+           shape = Model)) +
+  geom_line() +
+  geom_point() +
+  facet_grid(Metric ~ Method, scales = "free",
+             labeller = labeller(Metric = newlabs)) +
   geom_hline(aes(yintercept = Hline), color = "black") +
   #ggtitle("Modifier missing, ICC_out = ICC_mod = 0.1") +
   xlab("Number of clusters") +
