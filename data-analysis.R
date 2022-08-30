@@ -26,7 +26,7 @@ find_tval <- function(ests, varests, numimp, num_clusters) {
 load("/Users/blette/Downloads/ICPSR_36158/DS0002/36158-0002-Data.rda")
 
 # Set seed
-set.seed(82322)
+set.seed(83022)
 
 # Data wrangling
 levels(da36158.0002$CONDITION) <- levels(da36158.0002$CONDITION)[2:1]
@@ -60,7 +60,7 @@ mod <- geeglm(Y ~ A*Mcent, family = "gaussian",
 
 #############################################################################
 # Scenario 1: MCAR
-nsims <- 20
+nsims <- 100
 
 # Vectors to hold results for interaction estimand
 cca_int_ests1 <- rep(NA, nsims)
@@ -169,21 +169,21 @@ for (i in 1:nsims) {
   mi_int_lowervec <- colMeans(ests2) -
     sqrt(colMeans(varests2) + (numimp+1)/numimp*colVars(ests2))*
     find_tval(ests2, varests2, numimp, length(unique(dat$Cluster)))
-  mi_int_lower1[i] <- mi_lowervec[4]
+  mi_int_lower1[i] <- mi_int_lowervec[4]
   mi_int_uppervec <- colMeans(ests2) +
     sqrt(colMeans(varests2) + (numimp+1)/numimp*colVars(ests2))*
     find_tval(ests2, varests2, numimp, length(unique(dat$Cluster)))
-  mi_int_upper1[i] <- mi_uppervec[4]
+  mi_int_upper1[i] <- mi_int_uppervec[4]
   
   mi_ate_ests1[i] <- colMeans(ests2)[2]
   mi_ate_lowervec <- colMeans(ests2) -
     sqrt(colMeans(varests2) + (numimp+1)/numimp*colVars(ests2))*
     find_tval(ests2, varests2, numimp, length(unique(dat$Cluster)))
-  mi_ate_lower1[i] <- mi_lowervec[2]
+  mi_ate_lower1[i] <- mi_ate_lowervec[2]
   mi_ate_uppervec <- colMeans(ests2) +
     sqrt(colMeans(varests2) + (numimp+1)/numimp*colVars(ests2))*
     find_tval(ests2, varests2, numimp, length(unique(dat$Cluster)))
-  mi_ate_upper1[i] <- mi_uppervec[2]
+  mi_ate_upper1[i] <- mi_ate_uppervec[2]
   
   # Multilevel multiple imputation
   numimp <- 15
@@ -214,21 +214,21 @@ for (i in 1:nsims) {
   mmi_int_lowervec <- colMeans(ests3) -
     sqrt(colMeans(varests3) + (numimp+1)/numimp*colVars(ests3))*
     find_tval(ests3, varests3, numimp, length(unique(dat$Cluster)))
-  mmi_int_lower1[i] <- mmi_lowervec[4]
+  mmi_int_lower1[i] <- mmi_int_lowervec[4]
   mmi_int_uppervec <- colMeans(ests3) +
     sqrt(colMeans(varests3) + (numimp+1)/numimp*colVars(ests3))*
     find_tval(ests3, varests3, numimp, length(unique(dat$Cluster)))
-  mmi_int_upper1[i] <- mmi_uppervec[4]
+  mmi_int_upper1[i] <- mmi_int_uppervec[4]
   
   mmi_ate_ests1[i] <- colMeans(ests3)[2]
   mmi_ate_lowervec <- colMeans(ests3) -
     sqrt(colMeans(varests3) + (numimp+1)/numimp*colVars(ests3))*
     find_tval(ests3, varests3, numimp, length(unique(dat$Cluster)))
-  mmi_ate_lower1[i] <- mmi_lowervec[2]
+  mmi_ate_lower1[i] <- mmi_ate_lowervec[2]
   mmi_ate_uppervec <- colMeans(ests3) +
     sqrt(colMeans(varests3) + (numimp+1)/numimp*colVars(ests3))*
     find_tval(ests3, varests3, numimp, length(unique(dat$Cluster)))
-  mmi_ate_upper1[i] <- mmi_uppervec[2]
+  mmi_ate_upper1[i] <- mmi_ate_uppervec[2]
   
   # Bayesian multilevel multiple imputation
   ests4 <- array(NA, dim = c(numimp, 4))
@@ -303,21 +303,21 @@ for (i in 1:nsims) {
   bmmi_int_lowervec <- colMeans(ests4) -
     sqrt(colMeans(varests4) + (numimp+1)/numimp*colVars(ests4))*
     find_tval(ests4, varests4, numimp, length(unique(dat$Cluster)))
-  bmmi_int_lower1[i] <- bmmi_lowervec[4]
+  bmmi_int_lower1[i] <- bmmi_int_lowervec[4]
   bmmi_int_uppervec <- colMeans(ests4) +
     sqrt(colMeans(varests4) + (numimp+1)/numimp*colVars(ests4))*
     find_tval(ests4, varests4, numimp, length(unique(dat$Cluster)))
-  bmmi_int_upper1[i] <- bmmi_uppervec[4]
+  bmmi_int_upper1[i] <- bmmi_int_uppervec[4]
   
   bmmi_ate_ests1[i] <- colMeans(ests4)[2]
   bmmi_ate_lowervec <- colMeans(ests4) -
     sqrt(colMeans(varests4) + (numimp+1)/numimp*colVars(ests4))*
     find_tval(ests4, varests4, numimp, length(unique(dat$Cluster)))
-  bmmi_ate_lower1[i] <- bmmi_lowervec[2]
+  bmmi_ate_lower1[i] <- bmmi_ate_lowervec[2]
   bmmi_ate_uppervec <- colMeans(ests4) +
     sqrt(colMeans(varests4) + (numimp+1)/numimp*colVars(ests4))*
     find_tval(ests4, varests4, numimp, length(unique(dat$Cluster)))
-  bmmi_ate_upper1[i] <- bmmi_uppervec[2]
+  bmmi_ate_upper1[i] <- bmmi_ate_uppervec[2]
   
 }
 
@@ -451,7 +451,7 @@ for (i in 1:nsims) {
   # number of interaction terms for all imputation models
   
   # Single imputation
-  impmod <- glm(M ~ Y*A*X1_bin + Y*A*X2_bin, family = "binomial",
+  impmod <- glm(M ~ (Y + A + X1_bin + X2_bin)^2, family = "binomial",
                 data = dat2[!is.na(dat2$M), ])
   datimp5 <- dat2
   datimp5$M[is.na(datimp5$M)] <-
@@ -520,7 +520,7 @@ for (i in 1:nsims) {
   ests7 <- array(NA, dim = c(numimp, 4))
   varests7 <- array(NA, dim = c(numimp, 4))
   
-  mmi_impmod <- mixed_model(M ~ Y*A*X1_bin + Y*A*X2_bin,
+  mmi_impmod <- mixed_model(M ~ (Y + A + X1_bin + X2_bin)^2,
                             random = ~ 1 | Cluster, family = binomial(), 
                             data = dat2[!is.na(dat2$M), ], iter_EM = 100)
   
@@ -576,7 +576,7 @@ for (i in 1:nsims) {
   # Prior mean for beta
   beta0 <- summary(mmi_impmod)$coef_table[, 1]
   # Prior precision for beta
-  T0 <- diag(.01, 12)
+  T0 <- diag(.01, 11)
   
   # Initial values
   beta <- summary(mmi_impmod)$coef_table[, 1]
@@ -586,13 +586,15 @@ for (i in 1:nsims) {
   # Summarize data in helpful vectors and matrices
   #id <- with(df, ave(rep(1, nrow(df)), cluster_ID, FUN = seq_along))
   id <- dat2$Cluster
+  #X <- cbind(1, dat2$Y, dat2$A_bin, dat2$X1_bin, dat2$X2_bin,
+             #dat2$A_bin*dat2$Y,
+             #dat2$X1_bin*dat2$Y, dat2$A_bin*dat2$X1_bin, dat2$Y*dat2$X2_bin,
+             #dat2$A_bin*dat2$X2_bin, dat2$A_bin*dat2$Y*dat2$X1_bin,
+             #dat2$A_bin*dat2$Y*dat2$X2_bin)
   X <- cbind(1, dat2$Y, dat2$A_bin, dat2$X1_bin, dat2$X2_bin,
-             dat2$A_bin*dat2$Y,
-             dat2$X1_bin*dat2$Y, dat2$A_bin*dat2$X1_bin, dat2$Y*dat2$X2_bin,
-             dat2$A_bin*dat2$X2_bin, dat2$A_bin*dat2$Y*dat2$X1_bin,
-             dat2$A_bin*dat2$Y*dat2$X2_bin)
-  #X <- cbind(1, dat2$Y, dat2$X1_bin, dat2$X2_bin, dat2$X1_bin*dat2$Y,
-             #dat2$Y*dat2$X2_bin)
+             dat2$Y*dat2$A_bin, dat2$Y*dat2$X1_bin, dat2$Y*dat2$X2_bin,
+             dat2$A_bin*dat2$X1_bin, dat2$A_bin*dat2$X2_bin,
+             dat2$X1_bin*dat2$X2_bin)
   
   # Algorithm
   for (h in 1:numiter) {
@@ -796,7 +798,7 @@ for (i in 1:nsims) {
     1.96*summary(mod_cca)$coefficients[2, 2]
   
   # Single imputation
-  impmod <- glm(M ~ Y*A*X1_bin + Y*A*X2_bin, family = "binomial",
+  impmod <- glm(M ~ (Y + A + X1_bin + X2_bin)^2, family = "binomial",
                 data = dat3[!is.na(dat3$M), ])
   datimp9 <- dat3
   datimp9$M[is.na(datimp9$M)] <-
@@ -865,7 +867,8 @@ for (i in 1:nsims) {
   ests11 <- array(NA, dim = c(numimp, 4))
   varests11 <- array(NA, dim = c(numimp, 4))
   
-  mmi_impmod <- mixed_model(M ~ Y*X1_bin + Y*X2_bin, random = ~ 1 | Cluster,
+  mmi_impmod <- mixed_model(M ~ (Y + A + X1_bin + X2_bin)^2,
+                            random = ~ 1 | Cluster,
                             family = binomial(), 
                             data = dat2[!is.na(dat2$M), ], iter_EM = 100)
   
@@ -922,7 +925,7 @@ for (i in 1:nsims) {
   # Prior mean for beta
   beta0 <- summary(mmi_impmod)$coef_table[, 1]
   # Prior precision for beta
-  T0 <- diag(.01, 6)
+  T0 <- diag(.01, 11)
   
   # Initial values
   beta <- summary(mmi_impmod)$coef_table[, 1]
@@ -932,13 +935,15 @@ for (i in 1:nsims) {
   # Summarize data in helpful vectors and matrices
   #id <- with(df, ave(rep(1, nrow(df)), cluster_ID, FUN = seq_along))
   id <- dat3$Cluster
-  X <- cbind(1, dat3$A_bin, dat3$Y, dat3$X1_bin, dat3$X2_bin,
-             dat3$A_bin*dat3$Y,
-             dat3$X1_bin*dat3$Y, dat3$A_bin*dat3$X1_bin, dat3$Y*dat3$X2_bin,
-             dat3$A_bin*dat3$X2_bin, dat3$A_bin*dat3$Y*dat3$X1_bin,
-             dat3$A_bin*dat3$Y*dat3$X2_bin)
-  X <- cbind(1, dat3$Y, dat3$X1_bin, dat3$X2_bin, dat3$X1_bin*dat3$Y,
-             dat3$Y*dat3$X2_bin)
+  #X <- cbind(1, dat3$A_bin, dat3$Y, dat3$X1_bin, dat3$X2_bin,
+             #dat3$A_bin*dat3$Y,
+             #dat3$X1_bin*dat3$Y, dat3$A_bin*dat3$X1_bin, dat3$Y*dat3$X2_bin,
+             #dat3$A_bin*dat3$X2_bin, dat3$A_bin*dat3$Y*dat3$X1_bin,
+             #dat3$A_bin*dat3$Y*dat3$X2_bin)
+  X <- cbind(1, dat2$Y, dat2$A_bin, dat2$X1_bin, dat2$X2_bin,
+             dat2$Y*dat2$A_bin, dat2$Y*dat2$X1_bin, dat2$Y*dat2$X2_bin,
+             dat2$A_bin*dat2$X1_bin, dat2$A_bin*dat2$X2_bin,
+             dat2$X1_bin*dat2$X2_bin)
   
   # Algorithm
   for (h in 1:numiter) {
@@ -1075,12 +1080,24 @@ ggplot(data = plotdat3, aes(y = method, x = pointest, xmin = lower,
 # Multipanel figure
 plotdat_full <- rbind(plotdat, plotdat2, plotdat3)
 
-ggplot(data = plotdat_full, aes(y = method, x = pointest, xmin = lower,
-                            xmax = upper)) +
+ggplot(data = plotdat_full[plotdat_full$estimand == "Int", ],
+       aes(y = method, x = pointest, xmin = lower, xmax = upper)) +
   facet_grid(type~scenario) +
   geom_point() + 
   geom_errorbarh(height = .1) +
-  scale_y_discrete(limits = rev(plotdat$method)) +
+  scale_y_discrete(limits = rev(plotdat_full$method[1:6])) +
+  labs(x = 'Interaction coefficient', y = 'Method') +
+  geom_vline(xintercept = 0, color = 'black', linetype = 'dashed',
+             alpha = .5) +
+  theme_light() +
+  theme(strip.background = element_rect(fill = "dark blue"))
+
+ggplot(data = plotdat_full[plotdat_full$estimand == "ATE", ],
+       aes(y = method, x = pointest, xmin = lower, xmax = upper)) +
+  facet_grid(type~scenario) +
+  geom_point() + 
+  geom_errorbarh(height = .1) +
+  scale_y_discrete(limits = rev(plotdat_full$method[1:6])) +
   labs(x = 'Interaction coefficient', y = 'Method') +
   geom_vline(xintercept = 0, color = 'black', linetype = 'dashed',
              alpha = .5) +
