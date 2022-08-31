@@ -520,9 +520,14 @@ for (i in 1:nsims) {
   ests7 <- array(NA, dim = c(numimp, 4))
   varests7 <- array(NA, dim = c(numimp, 4))
   
-  mmi_impmod <- mixed_model(M ~ (Y + A + X1_bin + X2_bin)^2,
-                            random = ~ 1 | Cluster, family = binomial(), 
-                            data = dat2[!is.na(dat2$M), ], iter_EM = 100)
+  mmi_impmod <- try(mixed_model(M ~ (Y + A + X1_bin + X2_bin)^2,
+                                random = ~ 1 | Cluster, family = binomial(), 
+                                data = dat2[!is.na(dat2$M), ], iter_EM = 100),
+                    silent = TRUE)
+  
+  if (class(mmi_impmod) == "try-error") {
+    next
+  }
   
   for (m in 1:numimp) {
     
@@ -671,11 +676,12 @@ plotdat2 <- data.frame(type = rep(c("Single Draw", "Average"), each = 12),
                                     mmi_ate_ests2[1], bmmi_ate_ests2[1],
                                     mod$coefficients[4], mean(cca_int_ests2),
                                     mean(si_int_ests2), mean(mi_int_ests2),
-                                    mean(mmi_int_ests2), mean(bmmi_int_ests2),
+                                    mean(mmi_int_ests2, na.rm = T),
+                                    mean(bmmi_int_ests2, na.rm = T),
                                     mod$coefficients[2], mean(cca_ate_ests2),
                                     mean(si_ate_ests2), mean(mi_ate_ests2),
-                                    mean(mmi_ate_ests2),
-                                    mean(bmmi_ate_ests2)),
+                                    mean(mmi_ate_ests2, na.rm = T),
+                                    mean(bmmi_ate_ests2, na.rm = T)),
                        lower = c(mod$coefficients[4] -
                                    1.96*summary(mod)$coefficients[4, 2],
                                  cca_int_lower2[1], si_int_lower2[1],
@@ -689,13 +695,15 @@ plotdat2 <- data.frame(type = rep(c("Single Draw", "Average"), each = 12),
                                  mod$coefficients[4] -
                                    1.96*summary(mod)$coefficients[4, 2],
                                  mean(cca_int_lower2), mean(si_int_lower2),
-                                 mean(mi_int_lower2), mean(mmi_int_lower2),
-                                 mean(bmmi_int_lower2),
+                                 mean(mi_int_lower2),
+                                 mean(mmi_int_lower2, na.rm = T),
+                                 mean(bmmi_int_lower2, na.rm = T),
                                  mod$coefficients[2] -
                                    1.96*summary(mod)$coefficients[2, 2],
                                  mean(cca_ate_lower2), mean(si_ate_lower2),
-                                 mean(mi_ate_lower2), mean(mmi_ate_lower2),
-                                 mean(bmmi_ate_lower2)),
+                                 mean(mi_ate_lower2),
+                                 mean(mmi_ate_lower2, na.rm = T),
+                                 mean(bmmi_ate_lower2, na.rm = T)),
                        upper = c(mod$coefficients[4] +
                                    1.96*summary(mod)$coefficients[4, 2],
                                  cca_int_upper2[1], si_int_upper2[1],
@@ -709,21 +717,15 @@ plotdat2 <- data.frame(type = rep(c("Single Draw", "Average"), each = 12),
                                  mod$coefficients[4] +
                                    1.96*summary(mod)$coefficients[4, 2],
                                  mean(cca_int_upper2), mean(si_int_upper2),
-                                 mean(mi_int_upper2), mean(mmi_int_upper2),
-                                 mean(bmmi_int_upper2),
+                                 mean(mi_int_upper2),
+                                 mean(mmi_int_upper2, na.rm = T),
+                                 mean(bmmi_int_upper2, na.rm = T),
                                  mod$coefficients[2] +
                                    1.96*summary(mod)$coefficients[2, 2],
                                  mean(cca_ate_upper2), mean(si_ate_upper2),
-                                 mean(mi_ate_upper2), mean(mmi_ate_upper2),
-                                 mean(bmmi_ate_upper2)))
-
-ggplot(data = plotdat2, aes(y = method, x = pointest, xmin = lower,
-                           xmax = upper)) +
-  geom_point() + 
-  geom_errorbarh(height = .1) +
-  scale_y_discrete(limits = rev(plotdat$method)) +
-  labs(x = 'Interaction coefficient', y = 'Method') +
-  geom_vline(xintercept = 0, color = 'black', linetype = 'dashed', alpha = .5)
+                                 mean(mi_ate_upper2),
+                                 mean(mmi_ate_upper2, na.rm = T),
+                                 mean(bmmi_ate_upper2, na.rm = T)))
 
 
 #############################################################################
@@ -773,7 +775,7 @@ for (i in 1:nsims) {
   
   Rlogit <- 2 + 0.5*dat3$Y - 0.6*dat3$X1_bin - 0.3*dat3$X2_bin +
     0.05*dat3$Y*dat3$X1_bin - 0.15*dat3$Y*dat3$X2_bin +
-    #0.1*dat3$Y*dat3$X1_bin*dat3$X2_bin +
+    0.1*dat3$Y*dat3$X1_bin*dat3$X2_bin +
     rep(alpha0, size_clusters)
   Rprob <- exp(Rlogit) / (1 + exp(Rlogit))
   dat3$R <- rbinom(dim(dat3)[1], 1, Rprob)
@@ -867,10 +869,15 @@ for (i in 1:nsims) {
   ests11 <- array(NA, dim = c(numimp, 4))
   varests11 <- array(NA, dim = c(numimp, 4))
   
-  mmi_impmod <- mixed_model(M ~ (Y + A + X1_bin + X2_bin)^2,
-                            random = ~ 1 | Cluster,
-                            family = binomial(), 
-                            data = dat2[!is.na(dat2$M), ], iter_EM = 100)
+  mmi_impmod <- try(mixed_model(M ~ (Y + A + X1_bin + X2_bin)^2,
+                                random = ~ 1 | Cluster,
+                                family = binomial(), 
+                                data = dat2[!is.na(dat2$M), ], iter_EM = 100),
+                    silent = TRUE)
+  
+  if (class(mmi_impmod) == "try-error") {
+    next
+  }
   
   for (m in 1:numimp) {
     
@@ -1021,11 +1028,12 @@ plotdat3 <- data.frame(type = rep(c("Single Draw", "Average"), each = 12),
                                     mmi_ate_ests3[1], bmmi_ate_ests3[1],
                                     mod$coefficients[4], mean(cca_int_ests3),
                                     mean(si_int_ests3), mean(mi_int_ests3),
-                                    mean(mmi_int_ests3), mean(bmmi_int_ests3),
+                                    mean(mmi_int_ests3, na.rm = T),
+                                    mean(bmmi_int_ests3, na.rm = T),
                                     mod$coefficients[2], mean(cca_ate_ests3),
                                     mean(si_ate_ests3), mean(mi_ate_ests3),
-                                    mean(mmi_ate_ests3),
-                                    mean(bmmi_ate_ests3)),
+                                    mean(mmi_ate_ests3, na.rm = T),
+                                    mean(bmmi_ate_ests3, na.rm = T)),
                        lower = c(mod$coefficients[4] -
                                    1.96*summary(mod)$coefficients[4, 2],
                                  cca_int_lower3[1], si_int_lower3[1],
@@ -1039,13 +1047,15 @@ plotdat3 <- data.frame(type = rep(c("Single Draw", "Average"), each = 12),
                                  mod$coefficients[4] -
                                    1.96*summary(mod)$coefficients[4, 2],
                                  mean(cca_int_lower3), mean(si_int_lower3),
-                                 mean(mi_int_lower3), mean(mmi_int_lower3),
-                                 mean(bmmi_int_lower3),
+                                 mean(mi_int_lower3),
+                                 mean(mmi_int_lower3, na.rm = T),
+                                 mean(bmmi_int_lower3, na.rm = T),
                                  mod$coefficients[2] -
                                    1.96*summary(mod)$coefficients[2, 2],
                                  mean(cca_ate_lower3), mean(si_ate_lower3),
-                                 mean(mi_ate_lower3), mean(mmi_ate_lower3),
-                                 mean(bmmi_ate_lower3)),
+                                 mean(mi_ate_lower3),
+                                 mean(mmi_ate_lower3, na.rm = T),
+                                 mean(bmmi_ate_lower3, na.rm = T)),
                        upper = c(mod$coefficients[4] +
                                    1.96*summary(mod)$coefficients[4, 2],
                                  cca_int_upper3[1], si_int_upper3[1],
@@ -1059,25 +1069,18 @@ plotdat3 <- data.frame(type = rep(c("Single Draw", "Average"), each = 12),
                                  mod$coefficients[4] +
                                    1.96*summary(mod)$coefficients[4, 2],
                                  mean(cca_int_upper3), mean(si_int_upper3),
-                                 mean(mi_int_upper3), mean(mmi_int_upper3),
-                                 mean(bmmi_int_upper3),
+                                 mean(mi_int_upper3),
+                                 mean(mmi_int_upper3, na.rm = T),
+                                 mean(bmmi_int_upper3, na.rm = T),
                                  mod$coefficients[2] +
                                    1.96*summary(mod)$coefficients[2, 2],
                                  mean(cca_ate_upper3), mean(si_ate_upper3),
-                                 mean(mi_ate_upper3), mean(mmi_ate_upper3),
-                                 mean(bmmi_ate_upper3)))
-
-ggplot(data = plotdat3, aes(y = method, x = pointest, xmin = lower,
-                            xmax = upper)) +
-  geom_point() + 
-  geom_errorbarh(height = .1) +
-  scale_y_discrete(limits = rev(plotdat$method)) +
-  labs(x = 'Interaction coefficient', y = 'Method') +
-  geom_vline(xintercept = 0, color = 'black', linetype = 'dashed', alpha = .5)
+                                 mean(mi_ate_upper3),
+                                 mean(mmi_ate_upper3, na.rm = T),
+                                 mean(bmmi_ate_upper3, na.rm = T)))
 
 
-
-# Multipanel figure
+# Output multipanel figures
 plotdat_full <- rbind(plotdat, plotdat2, plotdat3)
 
 ggplot(data = plotdat_full[plotdat_full$estimand == "Int", ],
