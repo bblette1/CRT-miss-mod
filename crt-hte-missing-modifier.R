@@ -213,7 +213,7 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters, beta3) {
                                           type = "response"))
     dfimp8$Mcent <- dfimp8$M - mean(dfimp8$M)
     
-    mod8 <- geeglm(Y ~ A*M, family = "gaussian", data = dfimp8,
+    mod8 <- geeglm(Y ~ A*Mcent, family = "gaussian", data = dfimp8,
                    id = cluster_ID, corstr = "exchangeable")
     ests8[m, ] <- coef(mod8)
     varests8[m, ] <- (summary(mod8)$coefficients[, 2])^2
@@ -225,7 +225,7 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters, beta3) {
                                           type = "response"))
     dfimp9$Mcent <- dfimp9$M - mean(dfimp9$M)
     
-    mod9 <- geeglm(Y ~ A*M, family = "gaussian", data = dfimp9,
+    mod9 <- geeglm(Y ~ A*Mcent, family = "gaussian", data = dfimp9,
                    id = cluster_ID, corstr = "exchangeable")
     ests9[m, ] <- coef(mod9)
     varests9[m, ] <- (summary(mod9)$coefficients[, 2])^2
@@ -237,7 +237,7 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters, beta3) {
                                           type = "response"))
     dfimp10$Mcent <- dfimp10$M - mean(dfimp10$M)
     
-    mod10 <- geeglm(Y ~ A*M, family = "gaussian", data = dfimp10,
+    mod10 <- geeglm(Y ~ A*Mcent, family = "gaussian", data = dfimp10,
                     id = cluster_ID, corstr = "exchangeable")
     ests10[m, ] <- coef(mod10)
     varests10[m, ] <- (summary(mod10)$coefficients[, 2])^2
@@ -249,7 +249,7 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters, beta3) {
                                           type = "response"))
     dfimp11$Mcent <- dfimp11$M - mean(dfimp11$M)
     
-    mod11 <- geeglm(Y ~ A*M, family = "gaussian", data = dfimp11,
+    mod11 <- geeglm(Y ~ A*Mcent, family = "gaussian", data = dfimp11,
                     id = cluster_ID, corstr = "exchangeable")
     ests11[m, ] <- coef(mod11)
     varests11[m, ] <- (summary(mod11)$coefficients[, 2])^2
@@ -263,7 +263,7 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters, beta3) {
                                           type = "response"))
     dfimp12$Mcent <- dfimp12$M - mean(dfimp12$M)
     
-    mod12 <- geeglm(Y ~ A*M, family = "gaussian", data = dfimp12,
+    mod12 <- geeglm(Y ~ A*Mcent, family = "gaussian", data = dfimp12,
                     id = cluster_ID, corstr = "exchangeable")
     ests12[m, ] <- coef(mod12)
     varests12[m, ] <- (summary(mod12)$coefficients[, 2])^2
@@ -275,7 +275,7 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters, beta3) {
                                           type = "response"))
     dfimp13$Mcent <- dfimp13$M - mean(dfimp13$M)
     
-    mod13 <- geeglm(Y ~ A*M, family = "gaussian", data = dfimp13,
+    mod13 <- geeglm(Y ~ A*Mcent, family = "gaussian", data = dfimp13,
                     id = cluster_ID, corstr = "exchangeable")
     ests13[m, ] <- coef(mod13)
     varests13[m, ] <- (summary(mod13)$coefficients[, 2])^2
@@ -287,7 +287,7 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters, beta3) {
                                           type = "response"))
     dfimp14$Mcent <- dfimp14$M - mean(dfimp14$M)
     
-    mod14 <- geeglm(Y ~ A*M, family = "gaussian", data = dfimp14,
+    mod14 <- geeglm(Y ~ A*Mcent, family = "gaussian", data = dfimp14,
                     id = cluster_ID, corstr = "exchangeable")
     ests14[m, ] <- coef(mod14)
     varests14[m, ] <- (summary(mod14)$coefficients[, 2])^2
@@ -299,7 +299,7 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters, beta3) {
                                           type = "response"))
     dfimp15$Mcent <- dfimp15$M - mean(dfimp15$M)
     
-    mod15 <- geeglm(Y ~ A*M, family = "gaussian", data = dfimp15,
+    mod15 <- geeglm(Y ~ A*Mcent, family = "gaussian", data = dfimp15,
                     id = cluster_ID, corstr = "exchangeable")
     ests15[m, ] <- coef(mod15)
     varests15[m, ] <- (summary(mod15)$coefficients[, 2])^2
@@ -311,7 +311,7 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters, beta3) {
                                           type = "response"))
     dfimp16$Mcent <- dfimp16$M - mean(dfimp16$M)
     
-    mod16 <- geeglm(Y ~ A*M, family = "gaussian", data = dfimp16,
+    mod16 <- geeglm(Y ~ A*Mcent, family = "gaussian", data = dfimp16,
                     id = cluster_ID, corstr = "exchangeable")
     ests16[m, ] <- coef(mod16)
     varests16[m, ] <- (summary(mod16)$coefficients[, 2])^2
@@ -670,18 +670,19 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters, beta3) {
 # Fix ICC_out = ICC_mod = 0.1
 # 1000 sim max, not one big run, vary second_thousand argument for 2000 total
 nsims <- 1000
-second_thousand <- FALSE
+second_thousand <- TRUE
 
 ICC_out <- 0.1
 ICC_mod <- 0.1
 num_clusters <- 20
 beta3 <- 0
+beta3_name <- 0
 combos <- data.frame(trials = seq(1, nsims),
                      ICC_outs = rep(ICC_out, nsims),
                      ICC_mods = rep(ICC_mod, nsims),
                      num_clusterss = rep(num_clusters, nsims),
                      beta3s = rep(beta3, nsims))
-i <- as.numeric(Sys.getenv("LSB_JOBINDEX") + 1000*second_thousand)
+i <- as.numeric(Sys.getenv("LSB_JOBINDEX")) + 1000*second_thousand
 combo_i <- combos[(i - 1000*second_thousand), ]
 
 set.seed(i*1000)
@@ -696,6 +697,6 @@ sim <- with(combo_i, mapply(simulator, trials, ICC_outs, ICC_mods,
 # Output for HPC computing
 outfile <-
   paste("/project/mharhaylab/blette/8_29_22/Results/results_",
-        "nc_", num_clusters, "beta3_", beta3,
+        "nc_", num_clusters, "_beta3_", beta3_name,
         "_", i, ".Rdata", sep = "")
 save(sim, file = outfile)
