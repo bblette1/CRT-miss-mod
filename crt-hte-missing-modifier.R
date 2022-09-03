@@ -71,12 +71,6 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters, beta3) {
   mod1 <- geeglm(Y ~ A*Mcent, family = "gaussian",
                  data = df[!is.na(df$M), ],
                  id = cluster_ID, corstr = "exchangeable")
-  #mod1_mdvar <- GEE.var.md(Y ~ A*Mcent, family = "gaussian",
-                           #data = df[!is.na(df$M), ],
-                           #id = "cluster_ID", corstr = "exchangeable")
-  #mod1_kcvar <- GEE.var.kc(Y ~ A*Mcent, family = "gaussian",
-                           #data = df[!is.na(df$M), ],
-                           #id = "cluster_ID", corstr = "exchangeable")
   
   ################################
   # Methods 2-5: Single Imputation
@@ -91,10 +85,6 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters, beta3) {
   
   mod2 <- geeglm(Y ~ A*Mcent, family = "gaussian", data = dfimp2,
                  id = cluster_ID, corstr = "exchangeable")
-  #mod2_mdvar <- GEE.var.md(Y ~ A*Mcent, family = "gaussian", data = dfimp2,
-                           #id = "cluster_ID", corstr = "exchangeable")
-  #mod2_kcvar <- GEE.var.kc(Y ~ A*Mcent, family = "gaussian", data = dfimp2,
-                           #id = "cluster_ID", corstr = "exchangeable")
   
   # Method 3: Single imputation under X + A*Y model
   impmod3 <- glm(M ~ X + A*Y, data = df[!is.na(df$M), ],
@@ -107,10 +97,6 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters, beta3) {
   
   mod3 <- geeglm(Y ~ A*Mcent, family = "gaussian", data = dfimp3,
                  id = cluster_ID, corstr = "exchangeable")
-  #mod3_mdvar <- GEE.var.md(Y ~ A*Mcent, family = "gaussian", data = dfimp3,
-                           #id = "cluster_ID", corstr = "exchangeable")
-  #mod3_kcvar <- GEE.var.kc(Y ~ A*Mcent, family = "gaussian", data = dfimp3,
-                           #id = "cluster_ID", corstr = "exchangeable")
   
   # Method 4: Single imputation under X*A + Y model
   impmod4 <- glm(M ~ X*A + Y, data = df[!is.na(df$M), ],
@@ -123,10 +109,6 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters, beta3) {
   
   mod4 <- geeglm(Y ~ A*Mcent, family = "gaussian", data = dfimp4,
                  id = cluster_ID, corstr = "exchangeable")
-  #mod4_mdvar <- GEE.var.md(Y ~ A*Mcent, family = "gaussian", data = dfimp4,
-                           #id = "cluster_ID", corstr = "exchangeable")
-  #mod4_kcvar <- GEE.var.kc(Y ~ A*Mcent, family = "gaussian", data = dfimp4,
-                           #id = "cluster_ID", corstr = "exchangeable")
   
   # Method 5: Single imputation under X*A + Y*A model
   impmod5 <- glm(M ~ X*A + Y*A, data = df[!is.na(df$M), ],
@@ -139,10 +121,6 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters, beta3) {
   
   mod5 <- geeglm(Y ~ A*Mcent, family = "gaussian", data = dfimp5,
                  id = cluster_ID, corstr = "exchangeable")
-  #mod5_mdvar <- GEE.var.md(Y ~ A*Mcent, family = "gaussian", data = dfimp5,
-                           #id = "cluster_ID", corstr = "exchangeable")
-  #mod5_kcvar <- GEE.var.kc(Y ~ A*Mcent, family = "gaussian", data = dfimp5,
-                           #id = "cluster_ID", corstr = "exchangeable")
   
   # Method 6: Single imputation under X*A*Y model
   impmod6 <- glm(M ~ X*A*Y, data = df[!is.na(df$M), ],
@@ -155,10 +133,6 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters, beta3) {
   
   mod6 <- geeglm(Y ~ A*Mcent, family = "gaussian", data = dfimp6,
                  id = cluster_ID, corstr = "exchangeable")
-  #mod6_mdvar <- GEE.var.md(Y ~ A*Mcent, family = "gaussian", data = dfimp6,
-                           #id = "cluster_ID", corstr = "exchangeable")
-  #mod6_kcvar <- GEE.var.kc(Y ~ A*Mcent, family = "gaussian", data = dfimp6,
-                           #id = "cluster_ID", corstr = "exchangeable")
   
   ###########################################
   # Methods 7-11: Multiple Imputation methods
@@ -199,10 +173,6 @@ simulator <- function(trial, ICC_out, ICC_mod, num_clusters, beta3) {
     
     mod7 <- geeglm(Y ~ A*Mcent, family = "gaussian", data = dfimp7,
                    id = cluster_ID, corstr = "exchangeable")
-    #mod7_mdvar <- GEE.var.md(Y ~ A*Mcent, family = "gaussian", data = dfimp7,
-                             #id = "cluster_ID", corstr = "exchangeable")
-    #mod7_kcvar <- GEE.var.kc(Y ~ A*Mcent, family = "gaussian", data = dfimp7,
-                             #id = "cluster_ID", corstr = "exchangeable")
     ests7[m, ] <- coef(mod7)
     varests7[m, ] <- (summary(mod7)$coefficients[, 2])^2
     
