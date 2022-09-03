@@ -421,6 +421,7 @@ makeSimFig <- function(nsims, beta3name, type) {
 figdat1_0 <- makeSimFig(2000, 0, "")[[1]]
 figdat1_1.61 <- makeSimFig(2000, -1.61, "")[[1]]
 
+# MCSE look appropriate
 #tabdat1_0 <- makeSimFig(2000, 0)[[2]]
 
 # Beta3 = 0
