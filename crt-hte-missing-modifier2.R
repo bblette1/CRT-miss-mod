@@ -650,20 +650,21 @@ simulator <- function(trial, ICC_out, ICC_mod, ICC_miss, num_clusters, beta3) {
 # Fix ICC_out = ICC_mod = ICC_miss = 0.1
 # 1000 sim max, not one big run, vary second_thousand argument for 2000 total
 nsims <- 1000
-second_thousand <- FALSE
+second_thousand <- TRUE
 
 ICC_out <- 0.1
 ICC_mod <- 0.1
 ICC_miss <- 0.1
-num_clusters <- 20
-beta3 <- 0
+num_clusters <- 100
+beta3 <- -(1 + exp(0.5)) / exp(0.5)
+beta3_name <- -1.61
 combos <- data.frame(trials = seq(1, nsims),
                      ICC_outs = rep(ICC_out, nsims),
                      ICC_mods = rep(ICC_mod, nsims),
                      ICC_misses = rep(ICC_miss, nsims),
                      num_clusterss = rep(num_clusters, nsims),
                      beta3s = rep(beta3, nsims))
-i <- as.numeric(Sys.getenv("LSB_JOBINDEX") + 1000*second_thousand)
+i <- as.numeric(Sys.getenv("LSB_JOBINDEX")) + 1000*second_thousand
 combo_i <- combos[(i - 1000*second_thousand), ]
 
 set.seed(i*1000)
@@ -677,7 +678,7 @@ sim <- with(combo_i, mapply(simulator, trials, ICC_outs, ICC_mods, ICC_misses,
 
 # Output for HPC computing
 outfile <-
-  paste("/project/mharhaylab/blette/8_29_22/Results/results_",
-        "nc_", num_clusters, "beta3_", beta3,
+  paste("/project/mharhaylab/blette/8_29_22/Results/results2_",
+        "nc_", num_clusters, "_beta3_", beta3_name,
         "_", i, ".Rdata", sep = "")
 save(sim, file = outfile)
