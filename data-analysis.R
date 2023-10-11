@@ -1,10 +1,12 @@
 # Load libraries
 rm(list = ls())
+library(BayesLogit)
 library(dplyr)
 library(geepack)
 library(GLMMadaptive)
 library(lme4)
 library(matrixStats)
+library(Rfast)
 
 # Helper function to find t-value for MI (>1.96 when num_clusters is small)
 find_tval <- function(ests, varests, numimp, num_clusters) {
@@ -23,7 +25,7 @@ find_tval <- function(ests, varests, numimp, num_clusters) {
 }
 
 # Load data
-load("/Users/blette/Downloads/ICPSR_36158/DS0002/36158-0002-Data.rda")
+load("/Users/bryanblette/Downloads/36158-0002-Data.rda")
 
 # Set seed
 set.seed(83022)
