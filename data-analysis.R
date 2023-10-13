@@ -3,6 +3,7 @@ rm(list = ls())
 library(BayesLogit)
 library(dplyr)
 library(geepack)
+library(ggplot2)
 library(GLMMadaptive)
 library(lme4)
 library(matrixStats)
@@ -62,7 +63,7 @@ mod <- geeglm(Y ~ A*Mcent, family = "gaussian",
 
 #############################################################################
 # Scenario 1: MCAR
-nsims <- 100
+nsims <- 200
 
 # Vectors to hold results for interaction estimand
 cca_int_ests1 <- rep(NA, nsims)
@@ -1108,3 +1109,25 @@ ggplot(data = plotdat_full[plotdat_full$estimand == "ATE", ],
              alpha = .5) +
   theme_light() +
   theme(strip.background = element_rect(fill = "dark blue"))
+
+
+
+# New figures for the revision
+ggplot(data = plotdat_full[plotdat_full$type == "Average", ],
+       aes(y = method, x = pointest, xmin = lower, xmax = upper)) +
+  facet_grid(estimand~scenario) +
+  geom_point() + 
+  geom_errorbarh(height = .1) +
+  scale_y_discrete(limits = rev(plotdat_full$method[1:6])) +
+  labs(x = 'Average estimate and 95% CI', y = 'Method') +
+  geom_vline(xintercept = 0, color = 'black', linetype = 'dashed',
+             alpha = .5) +
+  theme_light() +
+  theme(strip.background = element_rect(fill = "dark blue"))
+
+
+plotdat_box <- data.frame("Method" = rep(c("CCA", "SI", "MI", "MMI", "B-MMI"),
+                                         100),
+                          "Vals" = c(cca_ate_ests1),
+                          "Scenario" = rep("Scenario 3", 24),
+                          "Estimand" = rep(rep(c("Int", "ATE"), each = 6), 2))
