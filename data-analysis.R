@@ -1112,7 +1112,7 @@ ggplot(data = plotdat_full[plotdat_full$estimand == "ATE", ],
   geom_point() + 
   geom_errorbarh(height = .1) +
   scale_y_discrete(limits = rev(plotdat_full$method[1:6])) +
-  labs(x = 'ATE', y = 'Method') +
+  labs(x = 'Interaction coefficient', y = 'Method') +
   geom_vline(xintercept = 0, color = 'black', linetype = 'dashed',
              alpha = .5) +
   theme_light() +
