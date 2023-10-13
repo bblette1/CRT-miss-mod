@@ -1112,7 +1112,7 @@ ggplot(data = plotdat_full[plotdat_full$estimand == "ATE", ],
   geom_point() + 
   geom_errorbarh(height = .1) +
   scale_y_discrete(limits = rev(plotdat_full$method[1:6])) +
-  labs(x = 'Interaction coefficient', y = 'Method') +
+  labs(x = 'ATE', y = 'Method') +
   geom_vline(xintercept = 0, color = 'black', linetype = 'dashed',
              alpha = .5) +
   theme_light() +
@@ -1139,3 +1139,128 @@ plotdat_box <- data.frame("Method" = rep(c("CCA", "SI", "MI", "MMI", "B-MMI"),
                           "Vals" = c(cca_ate_ests1),
                           "Scenario" = rep("Scenario 3", 24),
                           "Estimand" = rep(rep(c("Int", "ATE"), each = 6), 2))
+
+
+# New code
+ggplot(data = plotdat_full[plotdat_full$type == "Average", ],
+       aes(y = method, x = pointest, xmin = lower, xmax = upper)) +
+  facet_grid(estimand~scenario) +
+  geom_point() + 
+  geom_errorbarh(height = .1) +
+  scale_y_discrete(limits = rev(plotdat_full$method[1:6])) +
+  labs(x = 'Mean point estimate and 95% CI', y = 'Method') +
+  geom_vline(xintercept = 0, color = 'black', linetype = 'dashed',
+             alpha = .5) +
+  theme_light() +
+  theme(strip.background = element_rect(fill = "dark blue"))
+
+real_int_ests <- c(rep(mod$coefficients[4], nsims - 2),
+                    mod$coefficients[4]-1.96*summary(mod)$coefficients[4, 2],
+                    mod$coefficients[4]+1.96*summary(mod)$coefficients[4, 2])
+real_ate_ests <- c(rep(mod$coefficients[2], nsims - 2),
+                    mod$coefficients[2]-1.96*summary(mod)$coefficients[2, 2],
+                    mod$coefficients[2]+1.96*summary(mod)$coefficients[2, 2])
+
+plotdat_box <-
+  data.frame("Method" = rep(rep(c("Real Data", "CCA", "SI",
+                              "MI", "MMI", "B-MMI"), each = nsims*3), 2),
+             "Vals" = c(real_ate_ests, real_ate_ests, real_ate_ests,
+                        cca_ate_ests1, cca_ate_ests2, cca_ate_ests3,
+                        si_ate_ests1, si_ate_ests2, si_ate_ests3,
+                        mi_ate_ests1, mi_ate_ests2, mi_ate_ests3,
+                        mmi_ate_ests1, mmi_ate_ests2, mmi_ate_ests3,
+                        bmmi_ate_ests1, bmmi_ate_ests2, bmmi_ate_ests3,
+                        real_int_ests, real_int_ests, real_int_ests,
+                        cca_int_ests1, cca_int_ests2, cca_int_ests3,
+                        si_int_ests1, si_int_ests2, si_int_ests3,
+                        mi_int_ests1, mi_int_ests2, mi_int_ests3,
+                        mmi_int_ests1, mmi_int_ests2, mmi_int_ests3,
+                        bmmi_int_ests1, bmmi_int_ests2, bmmi_int_ests3),
+             "Scenario" = rep(rep(c("Scenario 1", "Scenario 2", "Scenario 3"),
+                              each = nsims), 2*6),
+             "Estimand" = rep(c("ATE", "Interaction Term"), each = 6*3*nsims))
+
+ggplot(plotdat_box, aes(x = Method, y = Vals)) +
+  geom_boxplot() +
+  facet_grid(Estimand~Scenario, scales = "free") +
+  scale_x_discrete(limits = unique(plotdat_box$Method)) +
+  theme_light() +
+  theme(strip.background = element_rect(fill = "dark blue"))
+
+# Values for web table
+# Narrowness metric, ATE estimand
+mean((cca_ate_upper1 - cca_ate_lower1) <
+       2*1.96*summary(mod)$coefficients[2, 2])
+mean((cca_ate_upper2 - cca_ate_lower2) <
+       2*1.96*summary(mod)$coefficients[2, 2])
+mean((cca_ate_upper3 - cca_ate_lower3) <
+       2*1.96*summary(mod)$coefficients[2, 2])
+mean((si_ate_upper1 - si_ate_lower1) <
+       2*1.96*summary(mod)$coefficients[2, 2])
+mean((si_ate_upper2 - si_ate_lower2) <
+       2*1.96*summary(mod)$coefficients[2, 2])
+mean((si_ate_upper3 - si_ate_lower3) <
+       2*1.96*summary(mod)$coefficients[2, 2])
+mean((mi_ate_upper1 - mi_ate_lower1) <
+       2*1.96*summary(mod)$coefficients[2, 2])
+mean((mi_ate_upper2 - mi_ate_lower2) <
+       2*1.96*summary(mod)$coefficients[2, 2])
+mean((mi_ate_upper3 - mi_ate_lower3) <
+       2*1.96*summary(mod)$coefficients[2, 2])
+mean((mmi_ate_upper1 - mmi_ate_lower1) <
+       2*1.96*summary(mod)$coefficients[2, 2])
+mean((mmi_ate_upper2 - mmi_ate_lower2) <
+       2*1.96*summary(mod)$coefficients[2, 2], na.rm = T)
+mean((mmi_ate_upper3 - mmi_ate_lower3) <
+       2*1.96*summary(mod)$coefficients[2, 2])
+mean((bmmi_ate_upper1 - bmmi_ate_lower1) <
+       2*1.96*summary(mod)$coefficients[2, 2])
+mean((bmmi_ate_upper2 - bmmi_ate_lower2) <
+       2*1.96*summary(mod)$coefficients[2, 2], na.rm = T)
+mean((bmmi_ate_upper3 - bmmi_ate_lower3) <
+       2*1.96*summary(mod)$coefficients[2, 2])
+
+# Narrowness metric, interaction term estimand
+mean((cca_int_upper1 - cca_int_lower1) <
+       2*1.96*summary(mod)$coefficients[4, 2])
+mean((cca_int_upper2 - cca_int_lower2) <
+       2*1.96*summary(mod)$coefficients[4, 2])
+mean((cca_int_upper3 - cca_int_lower3) <
+       2*1.96*summary(mod)$coefficients[4, 2])
+mean((si_int_upper1 - si_int_lower1) <
+       2*1.96*summary(mod)$coefficients[4, 2])
+mean((si_int_upper2 - si_int_lower2) <
+       2*1.96*summary(mod)$coefficients[4, 2])
+mean((si_int_upper3 - si_int_lower3) <
+       2*1.96*summary(mod)$coefficients[4, 2])
+mean((mi_int_upper1 - mi_int_lower1) <
+       2*1.96*summary(mod)$coefficients[4, 2])
+mean((mi_int_upper2 - mi_int_lower2) <
+       2*1.96*summary(mod)$coefficients[4, 2])
+mean((mi_int_upper3 - mi_int_lower3) <
+       2*1.96*summary(mod)$coefficients[4, 2])
+mean((mmi_int_upper1 - mmi_int_lower1) <
+       2*1.96*summary(mod)$coefficients[4, 2])
+mean((mmi_int_upper2 - mmi_int_lower2) <
+       2*1.96*summary(mod)$coefficients[4, 2], na.rm = T)
+mean((mmi_int_upper3 - mmi_int_lower3) <
+       2*1.96*summary(mod)$coefficients[4, 2])
+mean((bmmi_int_upper1 - bmmi_int_lower1) <
+       2*1.96*summary(mod)$coefficients[4, 2])
+mean((bmmi_int_upper2 - bmmi_int_lower2) <
+       2*1.96*summary(mod)$coefficients[4, 2], na.rm = T)
+mean((bmmi_int_upper3 - bmmi_int_lower3) <
+       2*1.96*summary(mod)$coefficients[4, 2])
+
+# Coverage metric, ATE estimand
+mean(cca_ate_upper1 >
+     mod$coefficients[2] + 1.96*summary(mod)$coefficients[2, 2] &
+     cca_ate_lower1 <
+     mod$coefficients[2] - 1.96*summary(mod)$coefficients[2, 2])
+
+
+# Coverage metric, interaction term estimand
+mean(cca_int_upper1 >
+       mod$coefficients[4] + 1.96*summary(mod)$coefficients[4, 2] &
+       cca_int_lower1 <
+       mod$coefficients[4] - 1.96*summary(mod)$coefficients[4, 2])
