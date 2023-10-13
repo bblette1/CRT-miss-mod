@@ -63,7 +63,7 @@ mod <- geeglm(Y ~ A*Mcent, family = "gaussian",
 
 #############################################################################
 # Scenario 1: MCAR
-nsims <- 200
+nsims <- 500
 
 # Vectors to hold results for interaction estimand
 cca_int_ests1 <- rep(NA, nsims)
@@ -528,44 +528,44 @@ for (i in 1:nsims) {
                                 data = dat2[!is.na(dat2$M), ], iter_EM = 100),
                     silent = TRUE)
   
-  if (class(mmi_impmod) == "try-error") {
-    next
-  }
-  
-  for (m in 1:numimp) {
+  if (class(mmi_impmod) != "try-error") {
     
-    datimp7 <- dat2
-    datimp7$M[is.na(datimp7$M)] <-
-      rbinom(length(datimp7$M[is.na(datimp7$M)]), 1,
-                              predict(mmi_impmod, dat2[is.na(dat2$M), ]))
-    datimp7$Mcent <- datimp7$M - mean(datimp7$M)
-    mod_mmi <- geeglm(Y ~ A*Mcent, family = "gaussian",
-                      data = datimp7,
-                      id = Cluster, corstr = "exchangeable")
-    ests7[m, ] <- coef(mod_mmi)
-    varests7[m, ] <- (summary(mod_mmi)$coefficients[, 2])^2
+    for (m in 1:numimp) {
     
+      datimp7 <- dat2
+      datimp7$M[is.na(datimp7$M)] <-
+        rbinom(length(datimp7$M[is.na(datimp7$M)]), 1,
+                                predict(mmi_impmod, dat2[is.na(dat2$M), ]))
+      datimp7$Mcent <- datimp7$M - mean(datimp7$M)
+      mod_mmi <- geeglm(Y ~ A*Mcent, family = "gaussian",
+                        data = datimp7,
+                        id = Cluster, corstr = "exchangeable")
+      ests7[m, ] <- coef(mod_mmi)
+      varests7[m, ] <- (summary(mod_mmi)$coefficients[, 2])^2
+      
+    }
+    
+    mmi_int_ests2[i] <- colMeans(ests7)[4]
+    mmi_int_lowervec <- colMeans(ests7) -
+      sqrt(colMeans(varests7) + (numimp+1)/numimp*colVars(ests7))*
+      find_tval(ests7, varests7, numimp, length(unique(dat$Cluster)))
+    mmi_int_lower2[i] <- mmi_int_lowervec[4]
+    mmi_int_uppervec <- colMeans(ests7) +
+      sqrt(colMeans(varests7) + (numimp+1)/numimp*colVars(ests7))*
+      find_tval(ests7, varests7, numimp, length(unique(dat$Cluster)))
+    mmi_int_upper2[i] <- mmi_int_uppervec[4]
+    
+    mmi_ate_ests2[i] <- colMeans(ests7)[2]
+    mmi_ate_lowervec <- colMeans(ests7) -
+      sqrt(colMeans(varests7) + (numimp+1)/numimp*colVars(ests7))*
+      find_tval(ests7, varests7, numimp, length(unique(dat$Cluster)))
+    mmi_ate_lower2[i] <- mmi_ate_lowervec[2]
+    mmi_ate_uppervec <- colMeans(ests7) +
+      sqrt(colMeans(varests7) + (numimp+1)/numimp*colVars(ests7))*
+      find_tval(ests7, varests7, numimp, length(unique(dat$Cluster)))
+    mmi_ate_upper2[i] <- mmi_ate_uppervec[2]
+  
   }
-  
-  mmi_int_ests2[i] <- colMeans(ests7)[4]
-  mmi_int_lowervec <- colMeans(ests7) -
-    sqrt(colMeans(varests7) + (numimp+1)/numimp*colVars(ests7))*
-    find_tval(ests7, varests7, numimp, length(unique(dat$Cluster)))
-  mmi_int_lower2[i] <- mmi_int_lowervec[4]
-  mmi_int_uppervec <- colMeans(ests7) +
-    sqrt(colMeans(varests7) + (numimp+1)/numimp*colVars(ests7))*
-    find_tval(ests7, varests7, numimp, length(unique(dat$Cluster)))
-  mmi_int_upper2[i] <- mmi_int_uppervec[4]
-  
-  mmi_ate_ests2[i] <- colMeans(ests7)[2]
-  mmi_ate_lowervec <- colMeans(ests7) -
-    sqrt(colMeans(varests7) + (numimp+1)/numimp*colVars(ests7))*
-    find_tval(ests7, varests7, numimp, length(unique(dat$Cluster)))
-  mmi_ate_lower2[i] <- mmi_ate_lowervec[2]
-  mmi_ate_uppervec <- colMeans(ests7) +
-    sqrt(colMeans(varests7) + (numimp+1)/numimp*colVars(ests7))*
-    find_tval(ests7, varests7, numimp, length(unique(dat$Cluster)))
-  mmi_ate_upper2[i] <- mmi_ate_uppervec[2]
   
   # Bayesian multilevel multiple imputation
   ests8 <- array(NA, dim = c(numimp, 4))
@@ -582,12 +582,20 @@ for (i in 1:nsims) {
   
   # Set priors
   # Prior mean for beta
-  beta0 <- summary(mmi_impmod)$coef_table[, 1]
+  if (class(mmi_impmod) != "try-error") {
+    beta0 <- summary(mmi_impmod)$coef_table[, 1]
+  } else {
+    beta0 <- summary(impmod)$coefficients[,1]
+  }
   # Prior precision for beta
   T0 <- diag(.01, 11)
   
   # Initial values
-  beta <- summary(mmi_impmod)$coef_table[, 1]
+  if (class(mmi_impmod) != "try-error") {
+    beta <- summary(mmi_impmod)$coef_table[, 1]
+  } else {
+    beta <- summary(impmod)$coefficients[,1]
+  }
   b <- rep(0, num_clusters) # Random effects
   taub <- 2 # Random effect precision
   
