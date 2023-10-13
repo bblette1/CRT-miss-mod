@@ -886,45 +886,45 @@ for (i in 1:nsims) {
                                 data = dat2[!is.na(dat2$M), ], iter_EM = 100),
                     silent = TRUE)
   
-  if (class(mmi_impmod) == "try-error") {
-    next
+  if (class(mmi_impmod) != "try-error") {
+    
+    for (m in 1:numimp) {
+      
+      datimp11 <- dat3
+      datimp11$M[is.na(datimp11$M)] <-
+        rbinom(length(datimp11$M[is.na(datimp11$M)]), 1,
+               predict(mmi_impmod, dat3[is.na(dat3$M), ]))
+      datimp11$Mcent <- datimp11$M - mean(datimp11$M)
+      
+      mod_mmi <- geeglm(Y ~ A*Mcent, family = "gaussian",
+                        data = datimp11,
+                        id = Cluster, corstr = "exchangeable")
+      ests11[m, ] <- coef(mod_mmi)
+      varests11[m, ] <- (summary(mod_mmi)$coefficients[, 2])^2
+      
+    }
+    
+    mmi_int_ests3[i] <- colMeans(ests11)[4]
+    mmi_int_lowervec <- colMeans(ests11) -
+      sqrt(colMeans(varests11) + (numimp+1)/numimp*colVars(ests11))*
+      find_tval(ests11, varests11, numimp, length(unique(dat$Cluster)))
+    mmi_int_lower3[i] <- mmi_int_lowervec[4]
+    mmi_int_uppervec <- colMeans(ests11) +
+      sqrt(colMeans(varests11) + (numimp+1)/numimp*colVars(ests11))*
+      find_tval(ests11, varests11, numimp, length(unique(dat$Cluster)))
+    mmi_int_upper3[i] <- mmi_int_uppervec[4]
+    
+    mmi_ate_ests3[i] <- colMeans(ests11)[2]
+    mmi_ate_lowervec <- colMeans(ests11) -
+      sqrt(colMeans(varests11) + (numimp+1)/numimp*colVars(ests11))*
+      find_tval(ests11, varests11, numimp, length(unique(dat$Cluster)))
+    mmi_ate_lower3[i] <- mmi_ate_lowervec[2]
+    mmi_ate_uppervec <- colMeans(ests11) +
+      sqrt(colMeans(varests11) + (numimp+1)/numimp*colVars(ests11))*
+      find_tval(ests11, varests11, numimp, length(unique(dat$Cluster)))
+    mmi_ate_upper3[i] <- mmi_ate_uppervec[2]
+    
   }
-  
-  for (m in 1:numimp) {
-    
-    datimp11 <- dat3
-    datimp11$M[is.na(datimp11$M)] <-
-      rbinom(length(datimp11$M[is.na(datimp11$M)]), 1,
-             predict(mmi_impmod, dat3[is.na(dat3$M), ]))
-    datimp11$Mcent <- datimp11$M - mean(datimp11$M)
-    
-    mod_mmi <- geeglm(Y ~ A*Mcent, family = "gaussian",
-                      data = datimp11,
-                      id = Cluster, corstr = "exchangeable")
-    ests11[m, ] <- coef(mod_mmi)
-    varests11[m, ] <- (summary(mod_mmi)$coefficients[, 2])^2
-    
-  }
-  
-  mmi_int_ests3[i] <- colMeans(ests11)[4]
-  mmi_int_lowervec <- colMeans(ests11) -
-    sqrt(colMeans(varests11) + (numimp+1)/numimp*colVars(ests11))*
-    find_tval(ests11, varests11, numimp, length(unique(dat$Cluster)))
-  mmi_int_lower3[i] <- mmi_int_lowervec[4]
-  mmi_int_uppervec <- colMeans(ests11) +
-    sqrt(colMeans(varests11) + (numimp+1)/numimp*colVars(ests11))*
-    find_tval(ests11, varests11, numimp, length(unique(dat$Cluster)))
-  mmi_int_upper3[i] <- mmi_int_uppervec[4]
-  
-  mmi_ate_ests3[i] <- colMeans(ests11)[2]
-  mmi_ate_lowervec <- colMeans(ests11) -
-    sqrt(colMeans(varests11) + (numimp+1)/numimp*colVars(ests11))*
-    find_tval(ests11, varests11, numimp, length(unique(dat$Cluster)))
-  mmi_ate_lower3[i] <- mmi_ate_lowervec[2]
-  mmi_ate_uppervec <- colMeans(ests11) +
-    sqrt(colMeans(varests11) + (numimp+1)/numimp*colVars(ests11))*
-    find_tval(ests11, varests11, numimp, length(unique(dat$Cluster)))
-  mmi_ate_upper3[i] <- mmi_ate_uppervec[2]
   
   # Bayesian multilevel multiple imputation
   ests12 <- array(NA, dim = c(numimp, 4))
@@ -941,12 +941,20 @@ for (i in 1:nsims) {
   
   # Set priors
   # Prior mean for beta
-  beta0 <- summary(mmi_impmod)$coef_table[, 1]
+  if (class(mmi_impmod) != "try-error") {
+    beta0 <- summary(mmi_impmod)$coef_table[, 1]
+  } else {
+    beta0 <- summary(impmod)$coefficients[,1]
+  }
   # Prior precision for beta
   T0 <- diag(.01, 11)
   
   # Initial values
-  beta <- summary(mmi_impmod)$coef_table[, 1]
+  if (class(mmi_impmod) != "try-error") {
+    beta <- summary(mmi_impmod)$coef_table[, 1]
+  } else {
+    beta <- summary(impmod)$coefficients[,1]
+  }
   b <- rep(0, num_clusters) # Random effects
   taub <- 2 # Random effect precision
   
