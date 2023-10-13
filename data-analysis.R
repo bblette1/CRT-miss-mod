@@ -1128,28 +1128,7 @@ ggplot(data = plotdat_full[plotdat_full$estimand == "ATE", ],
 
 
 
-# New figures for the revision
-ggplot(data = plotdat_full[plotdat_full$type == "Average", ],
-       aes(y = method, x = pointest, xmin = lower, xmax = upper)) +
-  facet_grid(estimand~scenario) +
-  geom_point() + 
-  geom_errorbarh(height = .1) +
-  scale_y_discrete(limits = rev(plotdat_full$method[1:6])) +
-  labs(x = 'Average estimate and 95% CI', y = 'Method') +
-  geom_vline(xintercept = 0, color = 'black', linetype = 'dashed',
-             alpha = .5) +
-  theme_light() +
-  theme(strip.background = element_rect(fill = "dark blue"))
-
-
-plotdat_box <- data.frame("Method" = rep(c("CCA", "SI", "MI", "MMI", "B-MMI"),
-                                         100),
-                          "Vals" = c(cca_ate_ests1),
-                          "Scenario" = rep("Scenario 3", 24),
-                          "Estimand" = rep(rep(c("Int", "ATE"), each = 6), 2))
-
-
-# New code
+# New tables and figures for the revision
 ggplot(data = plotdat_full[plotdat_full$type == "Average", ],
        aes(y = method, x = pointest, xmin = lower, xmax = upper)) +
   facet_grid(estimand~scenario) +
@@ -1262,13 +1241,133 @@ mean((bmmi_int_upper3 - bmmi_int_lower3) <
 
 # Coverage metric, ATE estimand
 mean(cca_ate_upper1 >
-     mod$coefficients[2] + 1.96*summary(mod)$coefficients[2, 2] &
-     cca_ate_lower1 <
-     mod$coefficients[2] - 1.96*summary(mod)$coefficients[2, 2])
+       mod$coefficients[2] + 1.96*summary(mod)$coefficients[2, 2] &
+       cca_ate_lower1 <
+       mod$coefficients[2] - 1.96*summary(mod)$coefficients[2, 2])
+mean(cca_ate_upper2 >
+       mod$coefficients[2] + 1.96*summary(mod)$coefficients[2, 2] &
+       cca_ate_lower2 <
+       mod$coefficients[2] - 1.96*summary(mod)$coefficients[2, 2])
+mean(cca_ate_upper3 >
+       mod$coefficients[2] + 1.96*summary(mod)$coefficients[2, 2] &
+       cca_ate_lower3 <
+       mod$coefficients[2] - 1.96*summary(mod)$coefficients[2, 2])
+
+mean(si_ate_upper1 >
+       mod$coefficients[2] + 1.96*summary(mod)$coefficients[2, 2] &
+       si_ate_lower1 <
+       mod$coefficients[2] - 1.96*summary(mod)$coefficients[2, 2])
+mean(si_ate_upper2 >
+       mod$coefficients[2] + 1.96*summary(mod)$coefficients[2, 2] &
+       si_ate_lower2 <
+       mod$coefficients[2] - 1.96*summary(mod)$coefficients[2, 2])
+mean(si_ate_upper3 >
+       mod$coefficients[2] + 1.96*summary(mod)$coefficients[2, 2] &
+       si_ate_lower3 <
+       mod$coefficients[2] - 1.96*summary(mod)$coefficients[2, 2])
+
+mean(mi_ate_upper1 >
+       mod$coefficients[2] + 1.96*summary(mod)$coefficients[2, 2] &
+       mi_ate_lower1 <
+       mod$coefficients[2] - 1.96*summary(mod)$coefficients[2, 2])
+mean(mi_ate_upper2 >
+       mod$coefficients[2] + 1.96*summary(mod)$coefficients[2, 2] &
+       mi_ate_lower2 <
+       mod$coefficients[2] - 1.96*summary(mod)$coefficients[2, 2])
+mean(mi_ate_upper3 >
+       mod$coefficients[2] + 1.96*summary(mod)$coefficients[2, 2] &
+       mi_ate_lower3 <
+       mod$coefficients[2] - 1.96*summary(mod)$coefficients[2, 2])
+
+mean(mmi_ate_upper1 >
+       mod$coefficients[2] + 1.96*summary(mod)$coefficients[2, 2] &
+       mmi_ate_lower1 <
+       mod$coefficients[2] - 1.96*summary(mod)$coefficients[2, 2])
+mean(mmi_ate_upper2 >
+       mod$coefficients[2] + 1.96*summary(mod)$coefficients[2, 2] &
+       mmi_ate_lower2 <
+       mod$coefficients[2] - 1.96*summary(mod)$coefficients[2, 2], na.rm = T)
+mean(mmi_ate_upper3 >
+       mod$coefficients[2] + 1.96*summary(mod)$coefficients[2, 2] &
+       mmi_ate_lower3 <
+       mod$coefficients[2] - 1.96*summary(mod)$coefficients[2, 2])
+
+mean(bmmi_ate_upper1 >
+       mod$coefficients[2] + 1.96*summary(mod)$coefficients[2, 2] &
+       mmi_ate_lower1 <
+       mod$coefficients[2] - 1.96*summary(mod)$coefficients[2, 2])
+mean(bmmi_ate_upper2 >
+       mod$coefficients[2] + 1.96*summary(mod)$coefficients[2, 2] &
+       bmmi_ate_lower2 <
+       mod$coefficients[2] - 1.96*summary(mod)$coefficients[2, 2], na.rm = T)
+mean(bmmi_ate_upper3 >
+       mod$coefficients[2] + 1.96*summary(mod)$coefficients[2, 2] &
+       bmmi_ate_lower3 <
+       mod$coefficients[2] - 1.96*summary(mod)$coefficients[2, 2])
 
 
 # Coverage metric, interaction term estimand
 mean(cca_int_upper1 >
        mod$coefficients[4] + 1.96*summary(mod)$coefficients[4, 2] &
        cca_int_lower1 <
+       mod$coefficients[4] - 1.96*summary(mod)$coefficients[4, 2])
+mean(cca_int_upper2 >
+       mod$coefficients[4] + 1.96*summary(mod)$coefficients[4, 2] &
+       cca_int_lower2 <
+       mod$coefficients[4] - 1.96*summary(mod)$coefficients[4, 2])
+mean(cca_int_upper3 >
+       mod$coefficients[4] + 1.96*summary(mod)$coefficients[4, 2] &
+       cca_int_lower3 <
+       mod$coefficients[4] - 1.96*summary(mod)$coefficients[4, 2])
+
+mean(si_int_upper1 >
+       mod$coefficients[4] + 1.96*summary(mod)$coefficients[4, 2] &
+       si_int_lower1 <
+       mod$coefficients[4] - 1.96*summary(mod)$coefficients[4, 2])
+mean(si_int_upper2 >
+       mod$coefficients[4] + 1.96*summary(mod)$coefficients[4, 2] &
+       si_int_lower2 <
+       mod$coefficients[4] - 1.96*summary(mod)$coefficients[4, 2])
+mean(si_int_upper3 >
+       mod$coefficients[4] + 1.96*summary(mod)$coefficients[4, 2] &
+       si_int_lower3 <
+       mod$coefficients[4] - 1.96*summary(mod)$coefficients[4, 2])
+
+mean(mi_int_upper1 >
+       mod$coefficients[4] + 1.96*summary(mod)$coefficients[4, 2] &
+       mi_int_lower1 <
+       mod$coefficients[4] - 1.96*summary(mod)$coefficients[4, 2])
+mean(mi_int_upper2 >
+       mod$coefficients[4] + 1.96*summary(mod)$coefficients[4, 2] &
+       mi_int_lower2 <
+       mod$coefficients[4] - 1.96*summary(mod)$coefficients[4, 2])
+mean(mi_int_upper3 >
+       mod$coefficients[4] + 1.96*summary(mod)$coefficients[4, 2] &
+       mi_int_lower3 <
+       mod$coefficients[4] - 1.96*summary(mod)$coefficients[4, 2])
+
+mean(mmi_int_upper1 >
+       mod$coefficients[4] + 1.96*summary(mod)$coefficients[4, 2] &
+       mmi_int_lower1 <
+       mod$coefficients[4] - 1.96*summary(mod)$coefficients[4, 2])
+mean(mmi_int_upper2 >
+       mod$coefficients[4] + 1.96*summary(mod)$coefficients[4, 2] &
+       mmi_int_lower2 <
+       mod$coefficients[4] - 1.96*summary(mod)$coefficients[4, 2], na.rm = T)
+mean(mmi_int_upper3 >
+       mod$coefficients[4] + 1.96*summary(mod)$coefficients[4, 2] &
+       mmi_int_lower3 <
+       mod$coefficients[4] - 1.96*summary(mod)$coefficients[4, 2])
+
+mean(bmmi_int_upper1 >
+       mod$coefficients[4] + 1.96*summary(mod)$coefficients[4, 2] &
+       bmmi_int_lower1 <
+       mod$coefficients[4] - 1.96*summary(mod)$coefficients[4, 2])
+mean(bmmi_int_upper2 >
+       mod$coefficients[4] + 1.96*summary(mod)$coefficients[4, 2] &
+       bmmi_int_lower2 <
+       mod$coefficients[4] - 1.96*summary(mod)$coefficients[4, 2], na.rm = T)
+mean(bmmi_int_upper3 >
+       mod$coefficients[4] + 1.96*summary(mod)$coefficients[4, 2] &
+       bmmi_int_lower3 <
        mod$coefficients[4] - 1.96*summary(mod)$coefficients[4, 2])
