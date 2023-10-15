@@ -1098,6 +1098,12 @@ plotdat3 <- data.frame(type = rep(c("Single Draw", "Average"), each = 12),
                                  mean(mmi_ate_upper3, na.rm = T),
                                  mean(bmmi_ate_upper3, na.rm = T)))
 
+# Save for future use
+save(mod, cca_ate_ests1, cca_ate_ests2, cca_ate_ests3, cca_ate_lower1,
+     cca_ate_lower2, cca_ate_lower3, cca_ate_upper1, cca_ate_upper2,
+     cca_ate_upper3, )
+save.image("sim_results.Rdata")
+
 
 # Output multipanel figures
 plotdat_full <- rbind(plotdat, plotdat2, plotdat3)
@@ -1176,198 +1182,358 @@ ggplot(plotdat_box, aes(x = Method, y = Vals)) +
 
 # Values for web table
 # Narrowness metric, ATE estimand
-mean((cca_ate_upper1 - cca_ate_lower1) <
+cca_ate_narrow1 <- 
+  mean((cca_ate_upper1 - cca_ate_lower1) <
        2*1.96*summary(mod)$coefficients[2, 2])
-mean((cca_ate_upper2 - cca_ate_lower2) <
+cca_ate_narrow2 <- 
+  mean((cca_ate_upper2 - cca_ate_lower2) <
        2*1.96*summary(mod)$coefficients[2, 2])
-mean((cca_ate_upper3 - cca_ate_lower3) <
+cca_ate_narrow3 <- 
+  mean((cca_ate_upper3 - cca_ate_lower3) <
        2*1.96*summary(mod)$coefficients[2, 2])
-mean((si_ate_upper1 - si_ate_lower1) <
+
+si_ate_narrow1 <- 
+  mean((si_ate_upper1 - si_ate_lower1) <
        2*1.96*summary(mod)$coefficients[2, 2])
-mean((si_ate_upper2 - si_ate_lower2) <
+si_ate_narrow2 <- 
+  mean((si_ate_upper2 - si_ate_lower2) <
        2*1.96*summary(mod)$coefficients[2, 2])
-mean((si_ate_upper3 - si_ate_lower3) <
+si_ate_narrow3 <- 
+  mean((si_ate_upper3 - si_ate_lower3) <
        2*1.96*summary(mod)$coefficients[2, 2])
-mean((mi_ate_upper1 - mi_ate_lower1) <
+
+mi_ate_narrow1 <- 
+  mean((mi_ate_upper1 - mi_ate_lower1) <
        2*1.96*summary(mod)$coefficients[2, 2])
-mean((mi_ate_upper2 - mi_ate_lower2) <
+mi_ate_narrow2 <- 
+  mean((mi_ate_upper2 - mi_ate_lower2) <
        2*1.96*summary(mod)$coefficients[2, 2])
-mean((mi_ate_upper3 - mi_ate_lower3) <
+mi_ate_narrow3 <- 
+  mean((mi_ate_upper3 - mi_ate_lower3) <
        2*1.96*summary(mod)$coefficients[2, 2])
-mean((mmi_ate_upper1 - mmi_ate_lower1) <
+
+mmi_ate_narrow1 <- 
+  mean((mmi_ate_upper1 - mmi_ate_lower1) <
        2*1.96*summary(mod)$coefficients[2, 2])
-mean((mmi_ate_upper2 - mmi_ate_lower2) <
+mmi_ate_narrow2 <- 
+  mean((mmi_ate_upper2 - mmi_ate_lower2) <
        2*1.96*summary(mod)$coefficients[2, 2], na.rm = T)
-mean((mmi_ate_upper3 - mmi_ate_lower3) <
+mmi_ate_narrow3 <- 
+  mean((mmi_ate_upper3 - mmi_ate_lower3) <
        2*1.96*summary(mod)$coefficients[2, 2])
-mean((bmmi_ate_upper1 - bmmi_ate_lower1) <
+
+bmmi_ate_narrow1 <- 
+  mean((bmmi_ate_upper1 - bmmi_ate_lower1) <
        2*1.96*summary(mod)$coefficients[2, 2])
-mean((bmmi_ate_upper2 - bmmi_ate_lower2) <
-       2*1.96*summary(mod)$coefficients[2, 2], na.rm = T)
-mean((bmmi_ate_upper3 - bmmi_ate_lower3) <
+bmmi_ate_narrow2 <- 
+  mean((bmmi_ate_upper2 - bmmi_ate_lower2) <
+       2*1.96*summary(mod)$coefficients[2, 2])
+bmmi_ate_narrow3 <- 
+  mean((bmmi_ate_upper3 - bmmi_ate_lower3) <
        2*1.96*summary(mod)$coefficients[2, 2])
 
 # Narrowness metric, interaction term estimand
-mean((cca_int_upper1 - cca_int_lower1) <
+cca_int_narrow1 <- 
+  mean((cca_int_upper1 - cca_int_lower1) <
        2*1.96*summary(mod)$coefficients[4, 2])
-mean((cca_int_upper2 - cca_int_lower2) <
+cca_int_narrow2 <- 
+  mean((cca_int_upper2 - cca_int_lower2) <
        2*1.96*summary(mod)$coefficients[4, 2])
-mean((cca_int_upper3 - cca_int_lower3) <
-       2*1.96*summary(mod)$coefficients[4, 2])
-mean((si_int_upper1 - si_int_lower1) <
-       2*1.96*summary(mod)$coefficients[4, 2])
-mean((si_int_upper2 - si_int_lower2) <
-       2*1.96*summary(mod)$coefficients[4, 2])
-mean((si_int_upper3 - si_int_lower3) <
-       2*1.96*summary(mod)$coefficients[4, 2])
-mean((mi_int_upper1 - mi_int_lower1) <
-       2*1.96*summary(mod)$coefficients[4, 2])
-mean((mi_int_upper2 - mi_int_lower2) <
-       2*1.96*summary(mod)$coefficients[4, 2])
-mean((mi_int_upper3 - mi_int_lower3) <
-       2*1.96*summary(mod)$coefficients[4, 2])
-mean((mmi_int_upper1 - mmi_int_lower1) <
-       2*1.96*summary(mod)$coefficients[4, 2])
-mean((mmi_int_upper2 - mmi_int_lower2) <
-       2*1.96*summary(mod)$coefficients[4, 2], na.rm = T)
-mean((mmi_int_upper3 - mmi_int_lower3) <
-       2*1.96*summary(mod)$coefficients[4, 2])
-mean((bmmi_int_upper1 - bmmi_int_lower1) <
-       2*1.96*summary(mod)$coefficients[4, 2])
-mean((bmmi_int_upper2 - bmmi_int_lower2) <
-       2*1.96*summary(mod)$coefficients[4, 2], na.rm = T)
-mean((bmmi_int_upper3 - bmmi_int_lower3) <
+cca_int_narrow3 <- 
+  mean((cca_int_upper3 - cca_int_lower3) <
        2*1.96*summary(mod)$coefficients[4, 2])
 
-# Coverage metric, ATE estimand
-mean(cca_ate_upper1 >
+si_int_narrow1 <- 
+  mean((si_int_upper1 - si_int_lower1) <
+       2*1.96*summary(mod)$coefficients[4, 2])
+si_int_narrow2 <- 
+  mean((si_int_upper2 - si_int_lower2) <
+       2*1.96*summary(mod)$coefficients[4, 2])
+si_int_narrow3 <- 
+  mean((si_int_upper3 - si_int_lower3) <
+       2*1.96*summary(mod)$coefficients[4, 2])
+
+mi_int_narrow1 <- 
+  mean((mi_int_upper1 - mi_int_lower1) <
+       2*1.96*summary(mod)$coefficients[4, 2])
+mi_int_narrow2 <- 
+  mean((mi_int_upper2 - mi_int_lower2) <
+       2*1.96*summary(mod)$coefficients[4, 2])
+mi_int_narrow3 <- 
+  mean((mi_int_upper3 - mi_int_lower3) <
+       2*1.96*summary(mod)$coefficients[4, 2])
+
+mmi_int_narrow1 <- 
+  mean((mmi_int_upper1 - mmi_int_lower1) <
+       2*1.96*summary(mod)$coefficients[4, 2])
+mmi_int_narrow2 <- 
+  mean((mmi_int_upper2 - mmi_int_lower2) <
+       2*1.96*summary(mod)$coefficients[4, 2], na.rm = T)
+mmi_int_narrow3 <- 
+  mean((mmi_int_upper3 - mmi_int_lower3) <
+       2*1.96*summary(mod)$coefficients[4, 2])
+
+bmmi_int_narrow1 <- 
+  mean((bmmi_int_upper1 - bmmi_int_lower1) <
+       2*1.96*summary(mod)$coefficients[4, 2])
+bmmi_int_narrow2 <- 
+  mean((bmmi_int_upper2 - bmmi_int_lower2) <
+       2*1.96*summary(mod)$coefficients[4, 2])
+bmmi_int_narrow3 <- 
+  mean((bmmi_int_upper3 - bmmi_int_lower3) <
+       2*1.96*summary(mod)$coefficients[4, 2])
+
+# Covering metric, ATE estimand
+cca_ate_cov1 <-
+  mean(cca_ate_upper1 >
        mod$coefficients[2] + 1.96*summary(mod)$coefficients[2, 2] &
        cca_ate_lower1 <
        mod$coefficients[2] - 1.96*summary(mod)$coefficients[2, 2])
-mean(cca_ate_upper2 >
+cca_ate_cov2 <-
+  mean(cca_ate_upper2 >
        mod$coefficients[2] + 1.96*summary(mod)$coefficients[2, 2] &
        cca_ate_lower2 <
        mod$coefficients[2] - 1.96*summary(mod)$coefficients[2, 2])
-mean(cca_ate_upper3 >
+cca_ate_cov3 <-
+  mean(cca_ate_upper3 >
        mod$coefficients[2] + 1.96*summary(mod)$coefficients[2, 2] &
        cca_ate_lower3 <
        mod$coefficients[2] - 1.96*summary(mod)$coefficients[2, 2])
 
-mean(si_ate_upper1 >
+si_ate_cov1 <-
+  mean(si_ate_upper1 >
        mod$coefficients[2] + 1.96*summary(mod)$coefficients[2, 2] &
        si_ate_lower1 <
        mod$coefficients[2] - 1.96*summary(mod)$coefficients[2, 2])
-mean(si_ate_upper2 >
+si_ate_cov2 <-
+  mean(si_ate_upper2 >
        mod$coefficients[2] + 1.96*summary(mod)$coefficients[2, 2] &
        si_ate_lower2 <
        mod$coefficients[2] - 1.96*summary(mod)$coefficients[2, 2])
-mean(si_ate_upper3 >
+si_ate_cov3 <-
+  mean(si_ate_upper3 >
        mod$coefficients[2] + 1.96*summary(mod)$coefficients[2, 2] &
        si_ate_lower3 <
        mod$coefficients[2] - 1.96*summary(mod)$coefficients[2, 2])
 
-mean(mi_ate_upper1 >
+mi_ate_cov1 <-
+  mean(mi_ate_upper1 >
        mod$coefficients[2] + 1.96*summary(mod)$coefficients[2, 2] &
        mi_ate_lower1 <
        mod$coefficients[2] - 1.96*summary(mod)$coefficients[2, 2])
-mean(mi_ate_upper2 >
+mi_ate_cov2 <-
+  mean(mi_ate_upper2 >
        mod$coefficients[2] + 1.96*summary(mod)$coefficients[2, 2] &
        mi_ate_lower2 <
        mod$coefficients[2] - 1.96*summary(mod)$coefficients[2, 2])
-mean(mi_ate_upper3 >
+mi_ate_cov3 <-
+  mean(mi_ate_upper3 >
        mod$coefficients[2] + 1.96*summary(mod)$coefficients[2, 2] &
        mi_ate_lower3 <
        mod$coefficients[2] - 1.96*summary(mod)$coefficients[2, 2])
 
-mean(mmi_ate_upper1 >
+mmi_ate_cov1 <-
+  mean(mmi_ate_upper1 >
        mod$coefficients[2] + 1.96*summary(mod)$coefficients[2, 2] &
        mmi_ate_lower1 <
        mod$coefficients[2] - 1.96*summary(mod)$coefficients[2, 2])
-mean(mmi_ate_upper2 >
+mmi_ate_cov2 <-
+  mean(mmi_ate_upper2 >
        mod$coefficients[2] + 1.96*summary(mod)$coefficients[2, 2] &
        mmi_ate_lower2 <
        mod$coefficients[2] - 1.96*summary(mod)$coefficients[2, 2], na.rm = T)
-mean(mmi_ate_upper3 >
+mmi_ate_cov3 <-
+  mean(mmi_ate_upper3 >
        mod$coefficients[2] + 1.96*summary(mod)$coefficients[2, 2] &
        mmi_ate_lower3 <
        mod$coefficients[2] - 1.96*summary(mod)$coefficients[2, 2])
 
-mean(bmmi_ate_upper1 >
+bmmi_ate_cov1 <-
+  mean(bmmi_ate_upper1 >
        mod$coefficients[2] + 1.96*summary(mod)$coefficients[2, 2] &
        mmi_ate_lower1 <
        mod$coefficients[2] - 1.96*summary(mod)$coefficients[2, 2])
-mean(bmmi_ate_upper2 >
+bmmi_ate_cov2 <-
+  mean(bmmi_ate_upper2 >
        mod$coefficients[2] + 1.96*summary(mod)$coefficients[2, 2] &
        bmmi_ate_lower2 <
-       mod$coefficients[2] - 1.96*summary(mod)$coefficients[2, 2], na.rm = T)
-mean(bmmi_ate_upper3 >
+       mod$coefficients[2] - 1.96*summary(mod)$coefficients[2, 2])
+bmmi_ate_cov3 <-
+  mean(bmmi_ate_upper3 >
        mod$coefficients[2] + 1.96*summary(mod)$coefficients[2, 2] &
        bmmi_ate_lower3 <
        mod$coefficients[2] - 1.96*summary(mod)$coefficients[2, 2])
 
 
 # Coverage metric, interaction term estimand
-mean(cca_int_upper1 >
+cca_int_cov1 <-
+  mean(cca_int_upper1 >
        mod$coefficients[4] + 1.96*summary(mod)$coefficients[4, 2] &
        cca_int_lower1 <
        mod$coefficients[4] - 1.96*summary(mod)$coefficients[4, 2])
-mean(cca_int_upper2 >
+cca_int_cov2 <-
+  mean(cca_int_upper2 >
        mod$coefficients[4] + 1.96*summary(mod)$coefficients[4, 2] &
        cca_int_lower2 <
        mod$coefficients[4] - 1.96*summary(mod)$coefficients[4, 2])
-mean(cca_int_upper3 >
+cca_int_cov3 <-
+  mean(cca_int_upper3 >
        mod$coefficients[4] + 1.96*summary(mod)$coefficients[4, 2] &
        cca_int_lower3 <
        mod$coefficients[4] - 1.96*summary(mod)$coefficients[4, 2])
 
-mean(si_int_upper1 >
+si_int_cov1 <-
+  mean(si_int_upper1 >
        mod$coefficients[4] + 1.96*summary(mod)$coefficients[4, 2] &
        si_int_lower1 <
        mod$coefficients[4] - 1.96*summary(mod)$coefficients[4, 2])
-mean(si_int_upper2 >
+si_int_cov2 <-
+  mean(si_int_upper2 >
        mod$coefficients[4] + 1.96*summary(mod)$coefficients[4, 2] &
        si_int_lower2 <
        mod$coefficients[4] - 1.96*summary(mod)$coefficients[4, 2])
-mean(si_int_upper3 >
+si_int_cov3 <-
+  mean(si_int_upper3 >
        mod$coefficients[4] + 1.96*summary(mod)$coefficients[4, 2] &
        si_int_lower3 <
        mod$coefficients[4] - 1.96*summary(mod)$coefficients[4, 2])
 
-mean(mi_int_upper1 >
+mi_int_cov1 <-
+  mean(mi_int_upper1 >
        mod$coefficients[4] + 1.96*summary(mod)$coefficients[4, 2] &
        mi_int_lower1 <
        mod$coefficients[4] - 1.96*summary(mod)$coefficients[4, 2])
-mean(mi_int_upper2 >
+mi_int_cov2 <-
+  mean(mi_int_upper2 >
        mod$coefficients[4] + 1.96*summary(mod)$coefficients[4, 2] &
        mi_int_lower2 <
        mod$coefficients[4] - 1.96*summary(mod)$coefficients[4, 2])
-mean(mi_int_upper3 >
+mi_int_cov3 <-
+  mean(mi_int_upper3 >
        mod$coefficients[4] + 1.96*summary(mod)$coefficients[4, 2] &
        mi_int_lower3 <
        mod$coefficients[4] - 1.96*summary(mod)$coefficients[4, 2])
 
-mean(mmi_int_upper1 >
+mmi_int_cov1 <-
+  mean(mmi_int_upper1 >
        mod$coefficients[4] + 1.96*summary(mod)$coefficients[4, 2] &
        mmi_int_lower1 <
        mod$coefficients[4] - 1.96*summary(mod)$coefficients[4, 2])
-mean(mmi_int_upper2 >
+mmi_int_cov2 <-
+  mean(mmi_int_upper2 >
        mod$coefficients[4] + 1.96*summary(mod)$coefficients[4, 2] &
        mmi_int_lower2 <
        mod$coefficients[4] - 1.96*summary(mod)$coefficients[4, 2], na.rm = T)
-mean(mmi_int_upper3 >
+mmi_int_cov3 <-
+  mean(mmi_int_upper3 >
        mod$coefficients[4] + 1.96*summary(mod)$coefficients[4, 2] &
        mmi_int_lower3 <
        mod$coefficients[4] - 1.96*summary(mod)$coefficients[4, 2])
 
-mean(bmmi_int_upper1 >
+bmmi_int_cov1 <-
+  mean(bmmi_int_upper1 >
        mod$coefficients[4] + 1.96*summary(mod)$coefficients[4, 2] &
        bmmi_int_lower1 <
        mod$coefficients[4] - 1.96*summary(mod)$coefficients[4, 2])
-mean(bmmi_int_upper2 >
+bmmi_int_cov2 <-
+  mean(bmmi_int_upper2 >
        mod$coefficients[4] + 1.96*summary(mod)$coefficients[4, 2] &
        bmmi_int_lower2 <
-       mod$coefficients[4] - 1.96*summary(mod)$coefficients[4, 2], na.rm = T)
-mean(bmmi_int_upper3 >
+       mod$coefficients[4] - 1.96*summary(mod)$coefficients[4, 2])
+bmmi_int_cov3 <-
+  mean(bmmi_int_upper3 >
        mod$coefficients[4] + 1.96*summary(mod)$coefficients[4, 2] &
        bmmi_int_lower3 <
        mod$coefficients[4] - 1.96*summary(mod)$coefficients[4, 2])
+
+
+# Load libraries to export clean tables
+library(flextable)
+library(officer)
+
+# Make ATE narrow metric table
+tab1 <-
+  data.frame("Scenario" = c("Scenario 1", "Scenario 2", "Scenario 3"),
+             "CCA" = c(cca_ate_narrow1, cca_ate_narrow2, cca_ate_narrow3),
+             "SI" = c(si_ate_narrow1, si_ate_narrow2, si_ate_narrow3),
+             "MI" = c(mi_ate_narrow1, mi_ate_narrow2, mi_ate_narrow3),
+             "MMI" = c(mmi_ate_narrow1, mmi_ate_narrow2, mmi_ate_narrow3),
+             "B-MMI" = c(bmmi_ate_narrow1, bmmi_ate_narrow2, bmmi_ate_narrow3))
+
+tab1[,2:6] <- round(tab1[, 2:6], 3)
+
+ft1 <- flextable(tab1) %>%
+  theme_zebra()
+ft1 <- width(ft1, j = 3, width = 1.5)
+
+# Export table to Word
+read_docx() %>% 
+  body_add_par("Web Table 1") %>% 
+  body_add_flextable(value = ft1) %>% 
+  print(target = "Results/web_table1.docx")
+
+
+# Make Int narrow metric table
+tab2 <-
+  data.frame("Scenario" = c("Scenario 1", "Scenario 2", "Scenario 3"),
+             "CCA" = c(cca_int_narrow1, cca_int_narrow2, cca_int_narrow3),
+             "SI" = c(si_int_narrow1, si_int_narrow2, si_int_narrow3),
+             "MI" = c(mi_int_narrow1, mi_int_narrow2, mi_int_narrow3),
+             "MMI" = c(mmi_int_narrow1, mmi_int_narrow2, mmi_int_narrow3),
+             "B-MMI" = c(bmmi_int_narrow1, bmmi_int_narrow2, bmmi_int_narrow3))
+
+tab2[,2:6] <- round(tab2[, 2:6], 3)
+
+ft2 <- flextable(tab2) %>%
+  theme_zebra()
+ft2 <- width(ft2, j = 3, width = 1.5)
+
+# Export table to Word
+read_docx() %>% 
+  body_add_par("Web Table 2") %>% 
+  body_add_flextable(value = ft2) %>% 
+  print(target = "Results/web_table2.docx")
+
+
+# Make ATE cover metric table
+tab3 <-
+  data.frame("Scenario" = c("Scenario 1", "Scenario 2", "Scenario 3"),
+             "CCA" = c(cca_ate_cov1, cca_ate_cov2, cca_ate_cov3),
+             "SI" = c(si_ate_cov1, si_ate_cov2, si_ate_cov3),
+             "MI" = c(mi_ate_cov1, mi_ate_cov2, mi_ate_cov3),
+             "MMI" = c(mmi_ate_cov1, mmi_ate_cov2, mmi_ate_cov3),
+             "B-MMI" = c(bmmi_ate_cov1, bmmi_ate_cov2, bmmi_ate_cov3))
+
+tab3[,2:6] <- round(tab3[, 2:6], 3)
+
+ft3 <- flextable(tab3) %>%
+  theme_zebra()
+ft3 <- width(ft3, j = 3, width = 1.5)
+
+# Export table to Word
+read_docx() %>% 
+  body_add_par("Web Table 3") %>% 
+  body_add_flextable(value = ft3) %>% 
+  print(target = "Results/web_table3.docx")
+
+
+# Make Int cover metric table
+tab4 <-
+  data.frame("Scenario" = c("Scenario 1", "Scenario 2", "Scenario 3"),
+             "CCA" = c(cca_int_cov1, cca_int_cov2, cca_int_cov3),
+             "SI" = c(si_int_cov1, si_int_cov2, si_int_cov3),
+             "MI" = c(mi_int_cov1, mi_int_cov2, mi_int_cov3),
+             "MMI" = c(mmi_int_cov1, mmi_int_cov2, mmi_int_cov3),
+             "B-MMI" = c(bmmi_int_cov1, bmmi_int_cov2, bmmi_int_cov3))
+
+tab4[,2:6] <- round(tab4[, 2:6], 3)
+
+ft4 <- flextable(tab4) %>%
+  theme_zebra()
+ft4 <- width(ft4, j = 3, width = 1.5)
+
+# Export table to Word
+read_docx() %>% 
+  body_add_par("Web Table 4") %>% 
+  body_add_flextable(value = ft4) %>% 
+  print(target = "Results/web_table4.docx")
