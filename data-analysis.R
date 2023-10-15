@@ -1155,7 +1155,7 @@ real_ate_ests <- c(rep(mod$coefficients[2], nsims - 2),
                     mod$coefficients[2]+1.96*summary(mod)$coefficients[2, 2])
 
 plotdat_box <-
-  data.frame("Method" = rep(rep(c("Real Data", "CCA", "SI",
+  data.frame("Method" = rep(rep(c("Real", "CCA", "SI",
                               "MI", "MMI", "B-MMI"), each = nsims*3), 2),
              "Vals" = c(real_ate_ests, real_ate_ests, real_ate_ests,
                         cca_ate_ests1, cca_ate_ests2, cca_ate_ests3,
@@ -1174,7 +1174,7 @@ plotdat_box <-
              "Estimand" = rep(c("ATE", "Interaction Term"), each = 6*3*nsims))
 
 plotdat_box$Method2 <- "Missing"
-plotdat_box$Method2[plotdat_box$Method == "Real Data"] <- "Real"
+plotdat_box$Method2[plotdat_box$Method == "Real"] <- "Real"
 
 ggplot(plotdat_box, aes(x = Method, y = Vals, color = Method2)) +
   geom_boxplot() +
