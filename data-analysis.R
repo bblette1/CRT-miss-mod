@@ -1173,12 +1173,17 @@ plotdat_box <-
                               each = nsims), 2*6),
              "Estimand" = rep(c("ATE", "Interaction Term"), each = 6*3*nsims))
 
-ggplot(plotdat_box, aes(x = Method, y = Vals)) +
+plotdat_box$Method2 <- "Missing"
+plotdat_box$Method2[plotdat_box$Method == "Real Data"] <- "Real"
+
+ggplot(plotdat_box, aes(x = Method, y = Vals, color = Method2)) +
   geom_boxplot() +
   facet_grid(Estimand~Scenario, scales = "free") +
   scale_x_discrete(limits = unique(plotdat_box$Method)) +
+  scale_color_manual(values = c("Black", "Forest green")) +
   theme_light() +
-  theme(strip.background = element_rect(fill = "dark blue"))
+  theme(strip.background = element_rect(fill = "dark blue"),
+        legend.position = "none")
 
 # Values for web table
 # Narrowness metric, ATE estimand
