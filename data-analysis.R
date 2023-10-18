@@ -1185,7 +1185,7 @@ ggplot(plotdat_box, aes(x = Method, y = Vals, color = Method2)) +
   theme(strip.background = element_rect(fill = "dark blue"),
         legend.position = "none")
 
-# Values for web table
+# Values for web tables
 # Narrowness metric, ATE estimand
 cca_ate_narrow1 <- 
   mean((cca_ate_upper1 - cca_ate_lower1) <
